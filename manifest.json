@@ -1,18 +1,18 @@
 {
-  "name": "Personel Takip Paneli V2",
-  "short_name": "PTP V2",
+  "name": "Personel Takip Paneli V4",
+  "short_name": "PersonelTakip",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#eef1f6",
+  "background_color": "#eef2f7",
   "theme_color": "#4f46e5",
   "icons": [
     {
-      "src": "icon.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icon.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
