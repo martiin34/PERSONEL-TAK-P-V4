@@ -3,226 +3,218 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Personel Takip PRO</title>
-
-<link rel="icon" href="icon-192.png">
-<meta name="theme-color" content="#2c3e50">
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-
+<title>Personel Takip</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-body{font-family:Arial;margin:0;background:#f4f6f9;}
-header{background:#2c3e50;color:white;padding:12px;display:flex;justify-content:space-between;align-items:center;}
-button{padding:8px;border:none;background:#3498db;color:white;border-radius:4px;cursor:pointer;margin:2px;}
-button:hover{background:#2980b9;}
-.container{padding:15px;}
-input,select{width:100%;padding:10px;margin:5px 0;border-radius:5px;border:1px solid #ccc;}
-table{width:100%;border-collapse:collapse;background:white;}
-th,td{border:1px solid #ddd;padding:8px;text-align:center;}
-th{background:#34495e;color:white;}
-.login{max-width:320px;margin:100px auto;background:white;padding:20px;box-shadow:0 0 10px rgba(0,0,0,0.2);}
-.modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:none;justify-content:center;align-items:center;}
-.modal-box{background:white;padding:20px;width:90%;max-width:400px;border-radius:6px;}
+body{font-family:Arial,sans-serif;margin:0;background:#f3f4f6;font-size:13px;}
+header{background:#1e293b;color:white;padding:10px;width:100%;display:flex;justify-content:space-between;align-items:center;}
+.container-wrapper{display:flex;justify-content:center;width:100%;}
+.container{padding:10px;width:100%;max-width:960px;box-sizing:border-box;background:white;margin:10px 0;border-radius:6px;}
+input,select,button{padding:10px;margin:5px 0;box-sizing:border-box;font-size:13px;width:100%;}
+button{background:#2563eb;color:white;border:none;border-radius:4px;cursor:pointer;}
+button:hover{background:#1d4ed8;}
+.login{width:90%;max-width:320px;margin:50px auto;background:white;padding:15px;border-radius:6px;}
+.table-container{overflow-x:auto;width:100%;}
+table{border-collapse:collapse;width:100%;table-layout:auto;min-width:700px;}
+th,td{border:1px solid #ddd;padding:6px;text-align:center;font-size:12px;white-space:normal;word-wrap:break-word;}
+thead th{background:#1e293b;color:white;position:sticky;top:0;z-index:2;}
+.photo{width:30px;height:30px;border-radius:6px;object-fit:cover;}
+.icon-btn{background:#2563eb;color:white;border:none;border-radius:4px;cursor:pointer;padding:2px 4px;font-size:11px;}
+.icon-btn:hover{background:#1d4ed8;}
+.detail-row td{background:#f9fafb;text-align:left;font-size:11px;}
+@media(max-width:600px){
+.container-wrapper{justify-content:flex-start;}
+table, th, td{font-size:11px;padding:4px;}
+.photo{width:25px; height:25px;}
+input, button{font-size:12px; padding:8px;}
+}
 </style>
-
-<script>
-// 🔐 Firebase config senin bilgilerin
-const firebaseConfig = {
-  apiKey: "AIzaSyDuT34Y5OH8btCP_nRqgtAl2FA8UtJftwE",
-  authDomain: "personel-takip-adc2e.firebaseapp.com",
-  projectId: "personel-takip-adc2e",
-  storageBucket: "personel-takip-adc2e.firebasestorage.app",
-  messagingSenderId: "932699207133",
-  appId: "1:932699207133:web:fee2de07e42d94e87af234"
-};
-
-firebase.initializeApp(firebaseConfig);
-</script>
-
 </head>
 <body>
 
 <header>
-<h2>Personel Takip PRO</h2>
-<div>
+<div>Personel Takip</div>
+<div id="headerBtns" style="display:none">
 <button onclick="excel()">Excel</button>
-<button onclick="ayarAc()">⚙ Ayarlar</button>
 <button onclick="logout()">Çıkış</button>
 </div>
 </header>
 
-<div id="loginPage" class="login">
+<div class="container-wrapper">
+<div class="login" id="loginPage">
 <h3>Giriş</h3>
-
-<input id="user" placeholder="Email">
-<input id="pass" type="password" placeholder="Şifre">
-
+<input id="user" type="email" placeholder="Email" required>
+<input id="pass" type="password" placeholder="Şifre" required>
 <button onclick="login()">Giriş</button>
-<button onclick="register()">Kayıt Ol</button>
-<button onclick="sifreReset()">Şifremi Unuttum</button>
-
+<button type="button" onclick="sifreReset()" style="background:#f59e0b;margin-top:5px;">Şifre Sıfırla</button>
+</div>
 </div>
 
+<div class="container-wrapper">
 <div id="app" class="container" style="display:none">
-
-<div class="summary">
-<div id="topKisi">Personel: 0</div>
-<div id="topMaas">Toplam Maaş: 0</div>
-</div>
-
-<canvas id="chart" style="max-height:300px;"></canvas>
-
-<hr>
 <h3>Personel Ekle</h3>
 <input id="ad" placeholder="Ad">
 <input id="tel" placeholder="Telefon">
 <input id="maas" type="number" placeholder="Maaş">
+<input id="mesaiUcret" type="number" placeholder="Mesai Saat Ücreti">
+<input id="devUcret" type="number" placeholder="Devamsızlık Ücret">
+<input type="file" id="foto">
 <button onclick="personelEkle()">Personel Ekle</button>
 
 <hr>
-<input id="arama" placeholder="Personel ara..." onkeyup="render()">
+<h3>İşlem</h3>
+<select id="personelSelect"></select>
+<select id="islemTip">
+<option value="mesai">Mesai</option>
+<option value="avans">Avans</option>
+<option value="dev">Devamsızlık</option>
+</select>
+<input id="islemDeger" type="number" placeholder="Değer">
+<button onclick="islemEkle()">İşlem Ekle</button>
 
+<hr>
+<input id="arama" placeholder="Personel Ara" onkeyup="render()">
+
+<div class="table-container">
 <table>
 <thead>
-<tr><th>Ad</th><th>Telefon</th><th>Maaş</th><th>Net</th><th>İşlem</th></tr>
+<tr>
+<th>Foto</th>
+<th>Ad</th>
+<th>Telefon</th>
+<th>Maaş</th>
+<th>Mesai</th>
+<th>Avans</th>
+<th>Dev</th>
+<th>Net</th>
+<th>Detay</th>
+<th>Sil</th>
+</tr>
 </thead>
 <tbody id="liste"></tbody>
 </table>
-
+</div>
+</div>
 </div>
 
-<div id="ayarModal" class="modal">
-<div class="modal-box">
-<h3>Ayarlar</h3>
-<button onclick="sifreReset()">Şifre Değiştir</button>
-<button onclick="yeniKullanici()">Yeni Kullanıcı Oluştur</button>
-<br><br>
-<button onclick="ayarKapat()">Kapat</button>
-</div>
-</div>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <script>
-// 📌 Local veriler
-let data = JSON.parse(localStorage.getItem("personeller")) || [];
+const firebaseConfig={
+apiKey:"AIzaSyDuT34Y5OH8btCP_nRqgtAl2FA8UtJftwE",
+authDomain:"personel-takip-adc2e.firebaseapp.com",
+projectId:"personel-takip-adc2e",
+};
+firebase.initializeApp(firebaseConfig);
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-function save(){localStorage.setItem("personeller",JSON.stringify(data));}
+let data=JSON.parse(localStorage.getItem("personel"))||[];
 
-// 🎯 Gösterim
-function showApp(){
-  loginPage.style.display="none";
-  app.style.display="block";
-  render();
-}
+function save(){localStorage.setItem("personel",JSON.stringify(data))}
 
-// 🔐 Login
+// Oturum kontrolü
+firebase.auth().onAuthStateChanged(user=>{
+if(user){loginPage.style.display="none";app.style.display="block";headerBtns.style.display="block"; render();}
+else{loginPage.style.display="block";app.style.display="none";headerBtns.style.display="none";}
+});
+
 function login(){
-  firebase.auth().signInWithEmailAndPassword(user.value, pass.value)
-  .then(u=>{
-    if(u.user.emailVerified){
-      showApp();
-    }else alert("Email doğrulanmamış!");
-  }).catch(e=>alert(e.message));
+let email=user.value, password=pass.value;
+if(!email || !password){alert("Email ve Şifre gerekli"); return;}
+firebase.auth().signInWithEmailAndPassword(email,password)
+.catch(err=>alert(err.message));
 }
 
-// 📝 Kayıt
-function register(){
-  let email = prompt("Email");
-  let passw = prompt("Şifre (min 6 karakter)");
-  firebase.auth().createUserWithEmailAndPassword(email, passw)
-  .then(u=>{
-    u.user.sendEmailVerification();
-    alert("Doğrulama maili gönderildi!");
-  }).catch(e=>alert(e.message));
-}
-
-// 🔑 Şifre sıfırlama
 function sifreReset(){
-  let email = prompt("Email adresi");
-  firebase.auth().sendPasswordResetEmail(email)
-  .then(()=>alert("Şifre maili gönderildi"))
-  .catch(e=>alert(e.message));
+let email=prompt("Şifre sıfırlama için email giriniz:");
+if(email)firebase.auth().sendPasswordResetEmail(email).then(()=>alert("Şifre sıfırlama maili gönderildi")).catch(e=>alert(e.message));
 }
 
-// 👤 Yeni Kullanıcı
-function yeniKullanici(){
-  let email = prompt("Yeni email");
-  let passw = prompt("Şifre");
-  firebase.auth().createUserWithEmailAndPassword(email, passw)
-  .then(u=>{
-    u.user.sendEmailVerification();
-    alert("Kullanıcı oluşturuldu!");
-  }).catch(e=>alert(e.message));
-}
+function logout(){firebase.auth().signOut();}
 
-// 🔌 Logout
-function logout(){
-  firebase.auth().signOut();
-  location.reload();
-}
+function hesapla(p){p.net=Number(p.maas)+Number(p.mesai)-Number(p.avans)-Number(p.dev)}
 
-function ayarAc(){document.getElementById("ayarModal").style.display="flex";}
-function ayarKapat(){document.getElementById("ayarModal").style.display="none";}
-
-// 👩‍💼 Personel ekleme
 function personelEkle(){
-  let p={ad:ad.value, tel:tel.value, maas:Number(maas.value), net:Number(maas.value)};
-  data.push(p); save(); render();
-  ad.value=""; tel.value=""; maas.value="";
+let reader=new FileReader(), file=foto.files[0];
+reader.onload=function(e){
+let p={ad:ad.value,tel:tel.value,maas:Number(maas.value)||0,mesaiSaat:Number(mesaiUcret.value)||0,devBaz:Number(devUcret.value)||0,mesai:0,avans:0,dev:0,h:[],foto:e.target.result};
+hesapla(p); data.push(p); save(); render();
+}
+if(file){reader.readAsDataURL(file);}else{reader.onload({target:{result:""}});}
 }
 
-// 🗑 Sil
-function sil(i){
-  if(confirm("Silinsin mi?")){
-    data.splice(i,1); save(); render();
-  }
+function islemEkle(){
+let i=personelSelect.value, tip=islemTip.value, v=Number(islemDeger.value), p=data[i], tut=0;
+if(tip=="mesai"){tut=v*p.mesaiSaat;p.mesai+=tut;}
+if(tip=="avans"){tut=v;p.avans+=tut;}
+if(tip=="dev"){tut=v*p.devBaz;p.dev+=tut;}
+p.h.push({t:new Date().toLocaleDateString(),tip:tip,v:v,tut:tut});
+hesapla(p); save(); islemDeger.value="";
+render();
 }
 
-// 🖥 Render
+function toggleDetailRow(rowId){
+const detailRow=document.getElementById("detail-"+rowId);
+if(detailRow.style.display==="table-row"){detailRow.style.display="none";}
+else{detailRow.style.display="table-row";}
+}
+
+function yazdirDetay(i){
+let p=data[i];
+let content=`<h3>${p.ad} Detay</h3>`;
+if(p.h.length===0){content+="<p>Detay yok</p>";}
+else{
+content+="<table border='1' style='width:100%;border-collapse:collapse;'><tr><th>Tarih</th><th>Tip</th><th>Değer</th><th>Tutar</th></tr>";
+p.h.forEach(x=>{content+=`<tr><td>${x.t}</td><td>${x.tip}</td><td>${x.v}</td><td>${x.tut}₺</td></tr>`;});
+content+="</table>";
+}
+let w=window.open(); w.document.write(content); w.print(); w.close();
+}
+
 function render(){
-  liste.innerHTML=""; 
-  let labels=[], maasData=[];
-  let toplamM=0;
-  data.forEach((p,i)=>{
-    if(!p.ad.toLowerCase().includes(arama.value.toLowerCase())) return;
-    liste.innerHTML+=
-    `<tr>
-      <td>${p.ad}</td>
-      <td>${p.tel}</td>
-      <td>${p.maas}</td>
-      <td>${p.net}</td>
-      <td><button onclick="sil(${i})">Sil</button></td>
-    </tr>`;
-    labels.push(p.ad); maasData.push(p.maas);
-    toplamM+=p.maas;
-  });
-  topKisi.innerText="Personel: "+data.length;
-  topMaas.innerText="Toplam Maaş: "+toplamM;
-
-  // Grafik
-  new Chart(chart, {
-    type:'bar',
-    data:{
-      labels, datasets:[{label:"Maaş",data:maasData,backgroundColor:'#10b981'}]
-    }
-  });
+let aramaText=arama.value.toLowerCase();
+liste.innerHTML=""; personelSelect.innerHTML="";
+data.forEach((p,i)=>{
+if(!p.ad.toLowerCase().includes(aramaText)) return;
+// Ana satır
+liste.innerHTML+=`
+<tr>
+<td>${p.foto?'<img src="'+p.foto+'" class="photo">':''}</td>
+<td>${p.ad}</td>
+<td>${p.tel}</td>
+<td>${p.maas}</td>
+<td>${p.mesai}</td>
+<td>${p.avans}</td>
+<td>${p.dev}</td>
+<td>${p.net}</td>
+<td>
+<button class="icon-btn" onclick="toggleDetailRow(${i})"><i class="fa-solid fa-eye"></i></button>
+<button class="icon-btn" onclick="yazdirDetay(${i})" title="Yazdır"><i class="fa-solid fa-print"></i></button>
+</td>
+<td><button class="icon-btn" onclick="sil(${i})"><i class="fa-solid fa-trash"></i></button></td>
+</tr>`;
+// Detay satırı
+let detayHtml="";
+p.h.forEach(x=>{detayHtml+=`${x.t} - ${x.tip} - ${x.v} - ${x.tut}₺<br>`;});
+liste.innerHTML+=`
+<tr id="detail-${i}" class="detail-row" style="display:none;">
+<td colspan="10">${detayHtml || "Detay yok"}</td>
+</tr>`;
+personelSelect.innerHTML+=`<option value="${i}">${p.ad}</option>`;
+})
 }
 
-// 📊 Excel
+function sil(i){if(confirm("Silmek istiyor musunuz?")){data.splice(i,1);save();render();}}
+
 function excel(){
-  const ws_data=[["Ad","Tel","Maaş","Net"]];
-  data.forEach(p=>ws_data.push([p.ad,p.tel,p.maas,p.net]));
-  const ws=XLSX.utils.aoa_to_sheet(ws_data);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"Personeller");
-  XLSX.writeFile(wb,"personeller.xlsx");
+let ws=[["Ad","Tel","Maaş","Mesai","Avans","Dev","Net"]];
+data.forEach(p=>{ws.push([p.ad,p.tel,p.maas,p.mesai,p.avans,p.dev,p.net]);});
+const wsheet=XLSX.utils.aoa_to_sheet(ws), wb=XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb,wsheet,"Personel");
+XLSX.writeFile(wb,"personel.xlsx");
 }
-
 </script>
-
 </body>
 </html>
