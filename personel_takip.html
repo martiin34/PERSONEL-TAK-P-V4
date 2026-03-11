@@ -7,12 +7,15 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 body{font-family:Arial,sans-serif;margin:0;background:#f3f4f6;font-size:13px;}
-header{background:#1e293b;color:white;padding:10px;width:100%;display:flex;justify-content:space-between;align-items:center;}
+header{background:#1e293b;color:white;padding:10px;width:100%;display:flex;justify-content:center;align-items:center;flex-direction:column;}
+header h1{margin:0;font-size:28px;text-align:center;}
+.navbar{display:flex;justify-content:center;margin-top:10px;gap:10px;}
+.navbar button{background:#2563eb;color:white;border:none;border-radius:4px;cursor:pointer;padding:6px 12px;font-size:13px;}
+.navbar button:hover{background:#1d4ed8;}
 .container-wrapper{display:flex;justify-content:center;width:100%;}
 .container{padding:10px;width:100%;max-width:960px;box-sizing:border-box;background:white;margin:10px 0;border-radius:6px;}
 input,select,button{padding:10px;margin:5px 0;box-sizing:border-box;font-size:13px;width:100%;}
-button{background:#2563eb;color:white;border:none;border-radius:4px;cursor:pointer;}
-button:hover{background:#1d4ed8;}
+button{border-radius:4px;cursor:pointer;}
 .login{width:90%;max-width:320px;margin:50px auto;background:white;padding:15px;border-radius:6px;}
 .table-container{overflow-x:auto;width:100%;}
 table{border-collapse:collapse;width:100%;table-layout:auto;min-width:700px;}
@@ -33,10 +36,11 @@ input, button{font-size:12px; padding:8px;}
 <body>
 
 <header>
-<div>Personel Takip</div>
-<div id="headerBtns" style="display:none">
+<h1>PERSONEL TAKİP</h1>
+<div class="navbar" id="headerBtns" style="display:none">
 <button onclick="excel()">Excel</button>
 <button onclick="logout()">Çıkış</button>
+<button onclick="toggleAdmin()">Admin Panel</button>
 </div>
 </header>
 
@@ -52,6 +56,14 @@ input, button{font-size:12px; padding:8px;}
 
 <div class="container-wrapper">
 <div id="app" class="container" style="display:none">
+<!-- Admin Panel -->
+<div id="adminPanel" style="display:none; border:1px solid #ddd; padding:10px; margin-bottom:15px;">
+<h3>Yeni Kullanıcı Ekle (Admin)</h3>
+<input id="newUserEmail" placeholder="Email">
+<input id="newUserPass" type="password" placeholder="Şifre">
+<button onclick="adminAddUser()">Kullanıcı Ekle</button>
+</div>
+
 <h3>Personel Ekle</h3>
 <input id="ad" placeholder="Ad">
 <input id="tel" placeholder="Telefon">
@@ -116,7 +128,7 @@ function save(){localStorage.setItem("personel",JSON.stringify(data))}
 
 // Oturum kontrolü
 firebase.auth().onAuthStateChanged(user=>{
-if(user){loginPage.style.display="none";app.style.display="block";headerBtns.style.display="block"; render();}
+if(user){loginPage.style.display="none";app.style.display="block";headerBtns.style.display="flex"; render();}
 else{loginPage.style.display="block";app.style.display="none";headerBtns.style.display="none";}
 });
 
@@ -133,6 +145,21 @@ if(email)firebase.auth().sendPasswordResetEmail(email).then(()=>alert("Şifre s�
 }
 
 function logout(){firebase.auth().signOut();}
+
+function toggleAdmin(){
+let panel=document.getElementById("adminPanel");
+panel.style.display = panel.style.display==="none"?"block":"none";
+}
+
+// Admin kullanıcı ekleme
+function adminAddUser(){
+let email=document.getElementById("newUserEmail").value;
+let pass=document.getElementById("newUserPass").value;
+if(!email||!pass){alert("Email ve Şifre gerekli");return;}
+firebase.auth().createUserWithEmailAndPassword(email,pass)
+.then(()=>{alert("Kullanıcı eklendi!");document.getElementById("newUserEmail").value="";document.getElementById("newUserPass").value="";})
+.catch(e=>alert(e.message));
+}
 
 function hesapla(p){p.net=Number(p.maas)+Number(p.mesai)-Number(p.avans)-Number(p.dev)}
 
@@ -157,8 +184,7 @@ render();
 
 function toggleDetailRow(rowId){
 const detailRow=document.getElementById("detail-"+rowId);
-if(detailRow.style.display==="table-row"){detailRow.style.display="none";}
-else{detailRow.style.display="table-row";}
+detailRow.style.display = detailRow.style.display==="table-row"?"none":"table-row";
 }
 
 function yazdirDetay(i){
@@ -167,7 +193,7 @@ let content=`<h3>${p.ad} Detay</h3>`;
 if(p.h.length===0){content+="<p>Detay yok</p>";}
 else{
 content+="<table border='1' style='width:100%;border-collapse:collapse;'><tr><th>Tarih</th><th>Tip</th><th>Değer</th><th>Tutar</th></tr>";
-p.h.forEach(x=>{content+=`<tr><td>${x.t}</td><td>${x.tip}</td><td>${x.v}</td><td>${x.tut}₺</td></tr>`;});
+p.h.forEach(x=>{content+=`<tr><td>${x.t}</td><td>${x.tip}</td><td>${x.v}</td><td>${x.tut.toLocaleString('tr-TR', {minimumFractionDigits:2})}₺</td></tr>`;});
 content+="</table>";
 }
 let w=window.open(); w.document.write(content); w.print(); w.close();
@@ -178,30 +204,25 @@ let aramaText=arama.value.toLowerCase();
 liste.innerHTML=""; personelSelect.innerHTML="";
 data.forEach((p,i)=>{
 if(!p.ad.toLowerCase().includes(aramaText)) return;
-// Ana satır
 liste.innerHTML+=`
 <tr>
 <td>${p.foto?'<img src="'+p.foto+'" class="photo">':''}</td>
 <td>${p.ad}</td>
 <td>${p.tel}</td>
-<td>${p.maas}</td>
-<td>${p.mesai}</td>
-<td>${p.avans}</td>
-<td>${p.dev}</td>
-<td>${p.net}</td>
+<td>${p.maas.toLocaleString('tr-TR', {minimumFractionDigits:2})}₺</td>
+<td>${p.mesai.toLocaleString('tr-TR', {minimumFractionDigits:2})}₺</td>
+<td>${p.avans.toLocaleString('tr-TR', {minimumFractionDigits:2})}₺</td>
+<td>${p.dev.toLocaleString('tr-TR', {minimumFractionDigits:2})}₺</td>
+<td>${p.net.toLocaleString('tr-TR', {minimumFractionDigits:2})}₺</td>
 <td>
 <button class="icon-btn" onclick="toggleDetailRow(${i})"><i class="fa-solid fa-eye"></i></button>
 <button class="icon-btn" onclick="yazdirDetay(${i})" title="Yazdır"><i class="fa-solid fa-print"></i></button>
 </td>
 <td><button class="icon-btn" onclick="sil(${i})"><i class="fa-solid fa-trash"></i></button></td>
 </tr>`;
-// Detay satırı
 let detayHtml="";
-p.h.forEach(x=>{detayHtml+=`${x.t} - ${x.tip} - ${x.v} - ${x.tut}₺<br>`;});
-liste.innerHTML+=`
-<tr id="detail-${i}" class="detail-row" style="display:none;">
-<td colspan="10">${detayHtml || "Detay yok"}</td>
-</tr>`;
+p.h.forEach(x=>{detayHtml+=`${x.t} - ${x.tip} - ${x.v} - ${x.tut.toLocaleString('tr-TR', {minimumFractionDigits:2})}₺<br>`;});
+liste.innerHTML+=`<tr id="detail-${i}" class="detail-row" style="display:none;"><td colspan="10">${detayHtml || "Detay yok"}</td></tr>`;
 personelSelect.innerHTML+=`<option value="${i}">${p.ad}</option>`;
 })
 }
@@ -210,8 +231,21 @@ function sil(i){if(confirm("Silmek istiyor musunuz?")){data.splice(i,1);save();r
 
 function excel(){
 let ws=[["Ad","Tel","Maaş","Mesai","Avans","Dev","Net"]];
-data.forEach(p=>{ws.push([p.ad,p.tel,p.maas,p.mesai,p.avans,p.dev,p.net]);});
-const wsheet=XLSX.utils.aoa_to_sheet(ws), wb=XLSX.utils.book_new();
+data.forEach(p=>{
+ws.push([
+p.ad,
+p.tel,
+p.maas.toFixed(2),
+p.mesai.toFixed(2),
+p.avans.toFixed(2),
+p.dev.toFixed(2),
+p.net.toFixed(2)
+]);
+});
+const wsheet=XLSX.utils.aoa_to_sheet(ws);
+const colWidths = ws[0].map(h=>({wch:h.length+5}));
+wsheet['!cols'] = colWidths;
+const wb=XLSX.utils.book_new();
 XLSX.utils.book_append_sheet(wb,wsheet,"Personel");
 XLSX.writeFile(wb,"personel.xlsx");
 }
