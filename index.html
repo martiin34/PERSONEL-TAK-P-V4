@@ -42,15 +42,19 @@
         .btn-success { background: var(--success); color: white; width: 100%; padding: 12px; }
         .btn-mini-danger { background: var(--danger); color: white; padding: 4px 8px; font-size: 11px; border-radius: 4px; }
         
+        /* Kullanıcı Yönetimi Özel Stili */
+        .admin-select-wrapper { margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; }
+        .admin-item { background: #fdfdfd; border: 1px solid #eee; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+
         .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
         th { background: #f8f9fa; color: #7f8c8d; text-transform: uppercase; font-size: 11px; }
         
         .auth-box { width: 92%; max-width: 400px; margin: 80px auto; background: white; padding: 35px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; }
-        .admin-item { background: #fdfdfd; border: 1px solid #eee; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
         
         #fileInput { display: none; }
+        #adminListContent { display: none; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -58,7 +62,7 @@
 <header>
     <div style="font-weight: bold; letter-spacing: 1px;">🌍 Personel Takip</div>
     <div id="navContainer" style="display:none; position: relative;">
-        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <button class="menu-btn" onclick="toggleMenu('myDropdown')">☰</button>
         <div id="myDropdown" class="dropdown-content">
             <button onclick="exportToExcel()">📊 Excel Raporu</button>
             <button onclick="fullDatabaseBackup()">💾 Veri Yedeği İndir</button>
@@ -87,7 +91,15 @@
                 <input id="newAdminPass" type="password" placeholder="Şifre">
                 <button class="btn-main" onclick="addNewAdmin()">Ekle</button>
             </div>
-            <div id="adminListBody" style="margin-top:15px;"></div>
+            
+            <div class="admin-select-wrapper">
+                <button class="btn-main" style="width:100%; background:#95a5a6;" onclick="toggleAdminList()">
+                    👥 Kayıtlı Kullanıcıları Göster/Gizle
+                </button>
+                <div id="adminListContent">
+                    <div id="adminListBody"></div>
+                </div>
+            </div>
         </div>
 
         <div class="panel">
@@ -145,16 +157,20 @@
     const DEFAULT_ADMIN = { email: "admin@test.com", pass: "1234" };
     let currentUser = sessionStorage.getItem("v24_user");
 
-    function toggleMenu() {
-        const drop = document.getElementById("myDropdown");
+    // MENÜ FONKSİYONLARI
+    function toggleMenu(id) {
+        const drop = document.getElementById(id);
         drop.style.display = drop.style.display === "block" ? "none" : "block";
     }
+
+    function toggleAdminList() {
+        const list = document.getElementById("adminListContent");
+        list.style.display = list.style.display === "block" ? "none" : "block";
+    }
+
     window.onclick = function(event) {
-        if (!event.target.matches('.menu-btn')) {
-            const shared = document.getElementsByClassName("dropdown-content");
-            for (let i = 0; i < shared.length; i++) {
-                shared[i].style.display = "none";
-            }
+        if (!event.target.matches('.menu-btn') && !event.target.closest('.admin-select-wrapper')) {
+            document.getElementById("myDropdown").style.display = "none";
         }
     }
 
@@ -200,7 +216,7 @@
         });
     }
 
-    function adminSil(key) { if(confirm("Sil?")) db.ref('admins/' + key).remove(); }
+    function adminSil(key) { if(confirm("Kullanıcı silinsin mi?")) db.ref('admins/' + key).remove(); }
 
     function personelEkle() {
         if(!pAd.value || !pMaas.value) return;
@@ -264,8 +280,7 @@
             const data = JSON.stringify(snap.val(), null, 2);
             const a = document.createElement("a");
             a.href = URL.createObjectURL(new Blob([data], {type: 'application/json'}));
-            a.download = "Veri_Yedegi.json"; 
-            a.click();
+            a.download = "Veri_Yedegi.json"; a.click();
         });
     }
 
@@ -276,13 +291,10 @@
         reader.onload = function(e) {
             try {
                 const data = JSON.parse(e.target.result);
-                if(confirm("Tüm veriler yedeğe göre güncellenecek. Onaylıyor musunuz?")) {
-                    db.ref('/').set(data).then(() => {
-                        alert("Yedek yüklendi!");
-                        location.reload();
-                    });
+                if(confirm("Tüm veriler güncellenecek. Onaylıyor musunuz?")) {
+                    db.ref('/').set(data).then(() => { location.reload(); });
                 }
-            } catch (err) { alert("Geçersiz dosya!"); }
+            } catch (err) { alert("Hata!"); }
         };
         reader.readAsText(file);
     }
@@ -295,4 +307,3 @@
 </script>
 </body>
 </html>
-
