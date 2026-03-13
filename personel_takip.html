@@ -41,20 +41,13 @@
         .btn-main { background: var(--accent); color: white; padding: 10px 15px; }
         .btn-success { background: var(--success); color: white; width: 100%; padding: 12px; }
         .btn-mini-danger { background: var(--danger); color: white; padding: 4px 8px; font-size: 11px; border-radius: 4px; }
-        .btn-reset { background: #f39c12; color: white; padding: 4px 8px; font-size: 11px; border-radius: 4px; margin-right: 5px; }
         
-        .admin-select-wrapper { margin-top: 15px; }
-        .admin-item { background: #fdfdfd; border: 1px solid #eee; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-
-        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
-        th { background: #f8f9fa; color: #7f8c8d; text-transform: uppercase; font-size: 11px; }
+        .auth-box { width: 92%; max-width: 400px; margin: 60px auto; background: white; padding: 35px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; }
+        .forgot-link { display: block; margin-top: 15px; color: var(--accent); font-size: 13px; text-decoration: none; cursor: pointer; }
         
-        .auth-box { width: 92%; max-width: 400px; margin: 80px auto; background: white; padding: 35px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; }
-        
-        #fileInput { display: none; }
         #adminListContent { display: none; margin-top: 10px; padding: 10px; border-top: 1px solid #eee; }
+        .admin-item { background: #fdfdfd; border: 1px solid #eee; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        #fileInput { display: none; }
     </style>
 </head>
 <body>
@@ -80,21 +73,20 @@
         <input id="authEmail" type="email" placeholder="E-posta">
         <input id="authPass" type="password" placeholder="Şifre">
         <button class="btn-main" style="width:100%; padding: 15px; margin-top:10px;" onclick="login()">Giriş Yap</button>
+        <span class="forgot-link" onclick="forgotPassword()">Şifremi Unuttum?</span>
     </div>
 
     <div id="app" style="display:none">
-        
         <div id="adminOnlyPanel" class="panel" style="display:none; border: 2px solid var(--accent);">
             <h4>🛡️ Kullanıcı Yönetimi</h4>
             <div class="form-row">
                 <input id="newAdminEmail" type="email" placeholder="Yeni E-posta">
                 <input id="newAdminPass" type="password" placeholder="Şifre">
-                <button class="btn-main" onclick="addNewAdmin()">Yeni Ekle</button>
+                <button class="btn-main" onclick="addNewAdmin()">Ekle</button>
             </div>
-            
-            <div class="admin-select-wrapper">
+            <div style="margin-top:10px;">
                 <button class="btn-main" style="width:100%; background:#95a5a6; font-size: 12px;" onclick="toggleAdminList()">
-                    👥 Kayıtlı Kullanıcıları Yönet (Aç/Kapat)
+                    👥 Kayıtlı Kullanıcıları Yönet
                 </button>
                 <div id="adminListContent">
                     <div id="adminListBody"></div>
@@ -128,7 +120,7 @@
         </div>
 
         <div class="panel">
-            <h4>📋 Güncel Personel Listesi</h4>
+            <h4>📋 Personel Listesi</h4>
             <div class="table-responsive">
                 <table>
                     <thead>
@@ -157,22 +149,17 @@
     const DEFAULT_ADMIN = { email: "admin@test.com", pass: "1234" };
     let currentUser = sessionStorage.getItem("v24_user");
 
+    // MENÜLER
     function toggleMenu(id) {
         const drop = document.getElementById(id);
         drop.style.display = drop.style.display === "block" ? "none" : "block";
     }
-
     function toggleAdminList() {
         const list = document.getElementById("adminListContent");
         list.style.display = list.style.display === "block" ? "none" : "block";
     }
 
-    window.onclick = function(event) {
-        if (!event.target.matches('.menu-btn') && !event.target.closest('.admin-select-wrapper')) {
-            document.getElementById("myDropdown").style.display = "none";
-        }
-    }
-
+    // GİRİŞ
     async function login() {
         const email = document.getElementById("authEmail").value;
         const pass = document.getElementById("authPass").value;
@@ -183,7 +170,33 @@
             if(user) {
                 sessionStorage.setItem("v24_user", email.replace(/\./g, '_'));
                 location.reload();
-            } else alert("Hatalı Giriş!");
+            } else alert("Hata: E-posta veya şifre yanlış!");
+        });
+    }
+
+    // ŞİFREMİ UNUTTUM
+    function forgotPassword() {
+        const email = prompt("Şifresini öğrenmek istediğiniz e-posta adresini yazınız:");
+        if (!email) return;
+
+        db.ref('admins').once('value', (snap) => {
+            const data = snap.val();
+            let found = false;
+            
+            if (email.toLowerCase() === DEFAULT_ADMIN.email.toLowerCase()) {
+                alert("Ana yönetici şifreniz: " + DEFAULT_ADMIN.pass);
+                return;
+            }
+
+            if (data) {
+                Object.values(data).forEach(admin => {
+                    if (admin.email.toLowerCase() === email.toLowerCase()) {
+                        alert("E-posta bulundu! Şifreniz: " + admin.pass);
+                        found = true;
+                    }
+                });
+            }
+            if (!found) alert("Bu e-posta adresine ait bir kullanıcı bulunamadı!");
         });
     }
 
@@ -208,24 +221,14 @@
                     container.innerHTML += `
                         <div class="admin-item">
                             <span style="font-size:12px;">${data[key].email}</span>
-                            <div>
-                                <button class="btn-reset" onclick="resetAdminPass('${key}')">Şifre Reset</button>
-                                <button class="btn-mini-danger" onclick="adminSil('${key}')">Sil</button>
-                            </div>
+                            <button class="btn-mini-danger" onclick="adminSil('${key}')">Sil</button>
                         </div>`;
                 });
             }
         });
     }
 
-    function resetAdminPass(key) {
-        const newPass = prompt("Bu kullanıcı için yeni şifre belirleyin:");
-        if (newPass && newPass.length > 0) {
-            db.ref('admins/' + key).update({ pass: newPass }).then(() => alert("Şifre başarıyla güncellendi."));
-        }
-    }
-
-    function adminSil(key) { if(confirm("Kullanıcı tamamen silinecek?")) db.ref('admins/' + key).remove(); }
+    function adminSil(key) { if(confirm("Kullanıcı silinsin mi?")) db.ref('admins/' + key).remove(); }
 
     function personelEkle() {
         if(!pAd.value || !pMaas.value) return;
@@ -256,7 +259,7 @@
         db.ref('personeller/' + currentUser).on('value', (snap) => {
             const data = snap.val();
             liste.innerHTML = "";
-            pSelect.innerHTML = '<option value="">Seçiniz...</option>';
+            pSelect.innerHTML = '<option value="">Personel Seç...</option>';
             if(data) {
                 Object.keys(data).forEach(id => {
                     let p = data[id];
@@ -275,19 +278,20 @@
     function exportToExcel() {
         db.ref('personeller/' + currentUser).once('value', (snap) => {
             let data = snap.val();
-            if(!data) return alert("Veri yok!");
+            if(!data) return;
             let csv = "\ufeffAd Soyad;Maas;Mesai;Avans;Kesinti;Net\n";
             Object.values(data).forEach(p => csv += `${p.ad};${p.maas};${p.mesai};${p.avans};${p.dev};${p.net}\n`);
             const a = document.createElement("a");
             a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'}));
-            a.download = "Rapor.csv"; a.click();
+            a.download = "Personel_Raporu.csv"; a.click();
         });
     }
 
     function fullDatabaseBackup() {
         db.ref('/').once('value', (snap) => {
+            const data = JSON.stringify(snap.val(), null, 2);
             const a = document.createElement("a");
-            a.href = URL.createObjectURL(new Blob([JSON.stringify(snap.val())], {type: 'application/json'}));
+            a.href = URL.createObjectURL(new Blob([data], {type: 'application/json'}));
             a.download = "Sistem_Yedek.json"; a.click();
         });
     }
@@ -299,7 +303,7 @@
         reader.onload = function(e) {
             try {
                 const data = JSON.parse(e.target.result);
-                if(confirm("Tüm veriler geri yüklensin mi?")) {
+                if(confirm("Tüm veriler güncellenecek. Onaylıyor musunuz?")) {
                     db.ref('/').set(data).then(() => { location.reload(); });
                 }
             } catch (err) { alert("Hata!"); }
@@ -310,7 +314,7 @@
     function addNewAdmin() {
         const m = document.getElementById("newAdminEmail").value.trim();
         const s = document.getElementById("newAdminPass").value.trim();
-        if(!m || !s) return alert("Eksik bilgi!");
+        if(!m || !s) return;
         db.ref('admins').once('value', (snap) => {
             const admins = snap.val();
             let exists = false;
@@ -320,7 +324,7 @@
                 db.ref('admins').push({ email: m, pass: s });
                 document.getElementById("newAdminEmail").value = "";
                 document.getElementById("newAdminPass").value = "";
-                alert("Başarıyla eklendi.");
+                alert("Eklendi.");
             }
         });
     }
