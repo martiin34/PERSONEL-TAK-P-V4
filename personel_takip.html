@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Personel Takip Cloud v23</title>
+    <title>Personel Takip Cloud v24</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -57,12 +57,11 @@
     </div>
 
     <div id="app" style="display:none">
-        
         <div id="adminOnlyPanel" class="panel" style="display:none; border: 2px solid var(--accent);">
             <h4>🛡️ Admin Kontrol</h4>
             <div class="form-row">
-                <input id="newAdminEmail" type="email" placeholder="Yeni Kullanıcı E-posta">
-                <input id="newAdminPass" type="password" placeholder="Yeni Kullanıcı Şifre">
+                <input id="newAdminEmail" type="email" placeholder="Yeni E-posta">
+                <input id="newAdminPass" type="password" placeholder="Yeni Şifre">
                 <button class="btn-main" onclick="addNewAdmin()">Kullanıcı Oluştur</button>
             </div>
         </div>
@@ -119,19 +118,30 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const SUPER_ADMIN = "admin@test.com";
-    let currentUser = sessionStorage.getItem("v23_user");
+    
+    // Sabit Admin Bilgileri
+    const DEFAULT_ADMIN = { email: "admin@test.com", pass: "1234" };
+    let currentUser = sessionStorage.getItem("v24_user");
 
     function login() {
         const email = authEmail.value;
         const pass = authPass.value;
+
+        // Önce Firebase'deki ek adminlere bak
         db.ref('admins').once('value', (snap) => {
-            let admins = snap.val() || { "init": {email: SUPER_ADMIN, pass: "1234"} };
-            let user = Object.values(admins).find(a => a.email == email && a.pass == pass);
+            let admins = snap.val() ? Object.values(snap.val()) : [];
+            
+            // Sabit admini listeye ekle (Böylece veritabanı boş olsa da girer)
+            admins.push(DEFAULT_ADMIN);
+
+            let user = admins.find(a => a.email == email && a.pass == pass);
+            
             if(user) {
-                sessionStorage.setItem("v23_user", email.replace(/\./g, '_'));
+                sessionStorage.setItem("v24_user", email.replace(/\./g, '_'));
                 location.reload();
-            } else alert("Hata: Giriş bilgileri geçersiz.");
+            } else {
+                alert("Giriş Başarısız!");
+            }
         });
     }
 
@@ -139,22 +149,25 @@
         loginPage.style.display = "none";
         app.style.display = "block";
         topNav.style.display = "flex";
-        if(currentUser === SUPER_ADMIN.replace(/\./g, '_')) adminOnlyPanel.style.display = "block";
+        // Sadece admin@test.com giriş yaparsa kullanıcı ekleme paneli görünür
+        if(currentUser === "admin@test_com") adminOnlyPanel.style.display = "block";
         verileriGetir();
     }
 
     function forgotPassword() {
-        let email = prompt("Kayıtlı e-posta adresinizi giriniz:");
+        let email = prompt("E-posta giriniz:");
         if(!email) return;
+        if(email === DEFAULT_ADMIN.email) return alert("Şifreniz: " + DEFAULT_ADMIN.pass);
+        
         db.ref('admins').once('value', (snap) => {
             let user = Object.values(snap.val() || {}).find(a => a.email === email);
             if(user) alert("Şifreniz: " + user.pass);
-            else alert("Bu e-posta sistemde kayıtlı değil.");
+            else alert("Kayıt bulunamadı.");
         });
     }
 
     function personelEkle() {
-        if(!pAd.value || !pMaas.value) return alert("Ad ve Maaş alanları boş bırakılamaz.");
+        if(!pAd.value || !pMaas.value) return;
         db.ref('personeller/' + currentUser).push({
             ad: pAd.value, maas: +pMaas.value, mUcret: +pMesaiUcret.value,
             devGunluk: +pDevGunluk.value, mesai: 0, avans: 0, dev: 0, net: +pMaas.value
@@ -200,12 +213,12 @@
         });
     }
 
-    function sil(id) { if(confirm("Bu personeli kalıcı olarak silmek istediğinize emin misiniz?")) db.ref('personeller/' + currentUser + '/' + id).remove(); }
+    function sil(id) { if(confirm("Silinsin mi?")) db.ref('personeller/' + currentUser + '/' + id).remove(); }
     
     function addNewAdmin() {
         if(!newAdminEmail.value || !newAdminPass.value) return;
         db.ref('admins').push({ email: newAdminEmail.value, pass: newAdminPass.value });
-        alert("Yeni kullanıcı başarıyla oluşturuldu.");
+        alert("Kullanıcı Oluşturuldu.");
         newAdminEmail.value = ""; newAdminPass.value = "";
     }
     
@@ -214,15 +227,15 @@
     function exportToExcel() {
         db.ref('personeller/' + currentUser).once('value', (snap) => {
             let data = snap.val();
-            if(!data) return alert("Dışa aktarılacak veri bulunamadı.");
-            let csv = "\ufeffAd Soyad;Maaş;Mesai;Kesinti;Net Maaş\n";
+            if(!data) return alert("Veri yok.");
+            let csv = "\ufeffAd Soyad;Maas;Mesai;Kesinti;Net\n";
             Object.values(data).forEach(p => csv += `${p.ad};${p.maas};${p.mesai};${p.avans+p.dev};${p.net}\n`);
             const a = document.createElement("a");
-            a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8;'}));
-            a.download = "personel_maas_listesi.csv"; 
-            a.click();
+            a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'}));
+            a.download = "liste.csv"; a.click();
         });
     }
 </script>
 </body>
 </html>
+
