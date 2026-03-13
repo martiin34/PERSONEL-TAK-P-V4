@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Personel Takip Cloud v36</title>
+    <title>Personel Takip</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -13,7 +13,6 @@
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); color: #333; }
         
-        /* MİNİMAL ÜST MENÜ */
         header { 
             background: var(--primary); color: white; padding: 12px 20px; 
             display: flex; justify-content: space-between; align-items: center; 
@@ -21,7 +20,6 @@
         }
         .menu-btn { font-size: 24px; cursor: pointer; background: none; border: none; color: white; padding: 0 5px; }
         
-        /* AÇILIR MENÜ (DROPDOWN) */
         .dropdown-content {
             display: none; position: absolute; top: 55px; right: 15px;
             background-color: white; min-width: 180px; border-radius: 8px;
@@ -52,14 +50,13 @@
         .auth-box { width: 92%; max-width: 400px; margin: 80px auto; background: white; padding: 35px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; }
         .admin-item { background: #fdfdfd; border: 1px solid #eee; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
         
-        /* Dosya Seçiciyi Gizle */
         #fileInput { display: none; }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="font-weight: bold; letter-spacing: 1px;">🌍 Lalezen Cloud</div>
+    <div style="font-weight: bold; letter-spacing: 1px;">🌍 Personel Takip</div>
     <div id="navContainer" style="display:none; position: relative;">
         <button class="menu-btn" onclick="toggleMenu()">☰</button>
         <div id="myDropdown" class="dropdown-content">
@@ -148,7 +145,6 @@
     const DEFAULT_ADMIN = { email: "admin@test.com", pass: "1234" };
     let currentUser = sessionStorage.getItem("v24_user");
 
-    // MENÜ KONTROL
     function toggleMenu() {
         const drop = document.getElementById("myDropdown");
         drop.style.display = drop.style.display === "block" ? "none" : "block";
@@ -172,7 +168,7 @@
             if(user) {
                 sessionStorage.setItem("v24_user", email.replace(/\./g, '_'));
                 location.reload();
-            } else alert("Giriş Bilgileri Geçersiz!");
+            } else alert("Hata!");
         });
     }
 
@@ -204,7 +200,7 @@
         });
     }
 
-    function adminSil(key) { if(confirm("Kullanıcı silinsin mi?")) db.ref('admins/' + key).remove(); }
+    function adminSil(key) { if(confirm("Sil?")) db.ref('admins/' + key).remove(); }
 
     function personelEkle() {
         if(!pAd.value || !pMaas.value) return;
@@ -235,7 +231,7 @@
         db.ref('personeller/' + currentUser).on('value', (snap) => {
             const data = snap.val();
             liste.innerHTML = "";
-            pSelect.innerHTML = '<option value="">Personel Seç...</option>';
+            pSelect.innerHTML = '<option value="">Seç...</option>';
             if(data) {
                 Object.keys(data).forEach(id => {
                     let p = data[id];
@@ -248,18 +244,18 @@
         });
     }
 
-    function sil(id) { if(confirm("Personel silinsin mi?")) db.ref('personeller/' + currentUser + '/' + id).remove(); }
+    function sil(id) { if(confirm("Sil?")) db.ref('personeller/' + currentUser + '/' + id).remove(); }
     function logout() { sessionStorage.clear(); location.reload(); }
 
     function exportToExcel() {
         db.ref('personeller/' + currentUser).once('value', (snap) => {
             let data = snap.val();
-            if(!data) return alert("Veri bulunamadı!");
+            if(!data) return;
             let csv = "\ufeffAd Soyad;Maas;Mesai;Avans;Kesinti;Net\n";
             Object.values(data).forEach(p => csv += `${p.ad};${p.maas};${p.mesai};${p.avans};${p.dev};${p.net}\n`);
             const a = document.createElement("a");
             a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'}));
-            a.download = "Maas_Raporu.csv"; a.click();
+            a.download = "Personel_Raporu.csv"; a.click();
         });
     }
 
@@ -268,12 +264,11 @@
             const data = JSON.stringify(snap.val(), null, 2);
             const a = document.createElement("a");
             a.href = URL.createObjectURL(new Blob([data], {type: 'application/json'}));
-            a.download = `Sistem_Yedek_${new Date().toLocaleDateString()}.json`; 
+            a.download = "Veri_Yedegi.json"; 
             a.click();
         });
     }
 
-    // YEDEK YÜKLEME FONKSİYONU
     function restoreBackup(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -281,13 +276,13 @@
         reader.onload = function(e) {
             try {
                 const data = JSON.parse(e.target.result);
-                if(confirm("DİKKAT: Mevcut veritabanı silinecek ve bu yedek yüklenecek. Onaylıyor musunuz?")) {
+                if(confirm("Tüm veriler yedeğe göre güncellenecek. Onaylıyor musunuz?")) {
                     db.ref('/').set(data).then(() => {
-                        alert("Yedek başarıyla yüklendi! Sayfa yenileniyor...");
+                        alert("Yedek yüklendi!");
                         location.reload();
                     });
                 }
-            } catch (err) { alert("Hata: Geçersiz dosya formatı!"); }
+            } catch (err) { alert("Geçersiz dosya!"); }
         };
         reader.readAsText(file);
     }
