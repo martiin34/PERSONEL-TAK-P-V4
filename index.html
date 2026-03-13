@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Personel Takip Cloud v35</title>
+    <title>Personel Takip Cloud v36</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -12,69 +12,79 @@
         :root { --primary: #2c3e50; --accent: #3498db; --success: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; }
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); color: #333; }
-        header { background: var(--primary); color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+        
+        /* MİNİMAL ÜST MENÜ */
+        header { 
+            background: var(--primary); color: white; padding: 12px 20px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .menu-btn { font-size: 24px; cursor: pointer; background: none; border: none; color: white; padding: 0 5px; }
+        
+        /* AÇILIR MENÜ (DROPDOWN) */
+        .dropdown-content {
+            display: none; position: absolute; top: 55px; right: 15px;
+            background-color: white; min-width: 180px; border-radius: 8px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2); z-index: 1001; overflow: hidden;
+        }
+        .dropdown-content button {
+            width: 100%; padding: 12px 16px; border: none; background: none;
+            text-align: left; font-size: 14px; cursor: pointer; color: #333; border-bottom: 1px solid #eee;
+        }
+        .dropdown-content button:hover { background-color: #f1f1f1; }
+        .dropdown-content button:last-child { border-bottom: none; color: var(--danger); }
+
         .container { padding: 15px; max-width: 1200px; margin: auto; }
         .panel { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #eee; }
         .panel h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary); border-left: 4px solid var(--accent); padding-left: 10px; }
         .form-row { display: flex; flex-wrap: wrap; gap: 10px; }
         input, select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; flex: 1; min-width: 140px; font-size: 15px; }
-        button { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; }
-        .btn-main { background: var(--accent); color: white; }
-        .btn-success { background: var(--success); color: white; width: 100%; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-excel { background: #1f6e43; color: white; }
-        .btn-backup { background: #6c5ce7; color: white; }
+        button { border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .btn-main { background: var(--accent); color: white; padding: 10px 15px; }
+        .btn-success { background: var(--success); color: white; width: 100%; padding: 12px; }
+        .btn-mini-danger { background: var(--danger); color: white; padding: 4px 8px; font-size: 11px; border-radius: 4px; }
         
-        /* Küçük Sil Butonu Stili */
-        .btn-mini-danger { 
-            background: var(--danger); 
-            color: white; 
-            padding: 4px 8px; 
-            font-size: 11px; 
-            border-radius: 4px;
-        }
-
         .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
         th { background: #f8f9fa; color: #7f8c8d; text-transform: uppercase; font-size: 11px; }
-        .auth-box { width: 92%; max-width: 400px; margin: 80px auto; background: white; padding: 35px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; }
         
-        .admin-item { 
-            background: #fdfdfd; 
-            border: 1px solid #eee; 
-            padding: 8px 12px; 
-            border-radius: 8px; 
-            margin-bottom: 8px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-        }
+        .auth-box { width: 92%; max-width: 400px; margin: 80px auto; background: white; padding: 35px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; }
+        .admin-item { background: #fdfdfd; border: 1px solid #eee; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Dosya Seçiciyi Gizle */
+        #fileInput { display: none; }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="font-weight: bold;">🌍  Personel Sistem</div>
-    <div id="topNav" style="display:none; gap: 5px;">
-        <button onclick="exportToExcel()" class="btn-excel">Excel Rapor</button>
-        <button onclick="fullDatabaseBackup()" class="btn-backup">Yedek Al</button>
-        <button onclick="logout()" class="btn-danger">Çıkış</button>
+    <div style="font-weight: bold; letter-spacing: 1px;">🌍 Lalezen Cloud</div>
+    <div id="navContainer" style="display:none; position: relative;">
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <div id="myDropdown" class="dropdown-content">
+            <button onclick="exportToExcel()">📊 Excel Raporu</button>
+            <button onclick="fullDatabaseBackup()">💾 Veri Yedeği İndir</button>
+            <button onclick="document.getElementById('fileInput').click()">📤 Yedek Yükle (JSON)</button>
+            <button onclick="logout()">🔌 Güvenli Çıkış</button>
+        </div>
     </div>
 </header>
+
+<input type="file" id="fileInput" accept=".json" onchange="restoreBackup(event)">
 
 <div class="container">
     <div id="loginPage" class="auth-box">
         <h2>Yönetici Girişi</h2>
         <input id="authEmail" type="email" placeholder="E-posta">
         <input id="authPass" type="password" placeholder="Şifre">
-        <button class="btn-main" style="width:100%; padding: 15px;" onclick="login()">Sisteme Gir</button>
+        <button class="btn-main" style="width:100%; padding: 15px; margin-top:10px;" onclick="login()">Giriş Yap</button>
     </div>
 
     <div id="app" style="display:none">
         
         <div id="adminOnlyPanel" class="panel" style="display:none; border: 2px solid var(--accent);">
-            <h4>🛡️ Kullanıcı Yönetim Paneli</h4>
+            <h4>🛡️ Kullanıcı Yönetimi</h4>
             <div class="form-row">
                 <input id="newAdminEmail" type="email" placeholder="Yeni E-posta">
                 <input id="newAdminPass" type="password" placeholder="Şifre">
@@ -90,7 +100,7 @@
                 <input id="pMaas" type="number" placeholder="Net Maaş">
                 <input id="pMesaiUcret" type="number" placeholder="Saatlik Mesai ₺">
                 <input id="pDevGunluk" type="number" placeholder="Günlük Devamsızlık ₺">
-                <button class="btn-success" onclick="personelEkle()">Kaydet</button>
+                <button class="btn-success" onclick="personelEkle()">Sisteme Kaydet</button>
             </div>
         </div>
 
@@ -109,11 +119,11 @@
         </div>
 
         <div class="panel">
-            <h4>📋 Güncel Maaş Listesi</h4>
+            <h4>📋 Personel Listesi</h4>
             <div class="table-responsive">
                 <table>
                     <thead>
-                        <tr><th>Ad Soyad</th><th>Maaş</th><th>Mesai(+)</th><th>Kesinti(-)</th><th>Net Maaş</th><th>Sil</th></tr>
+                        <tr><th>Ad Soyad</th><th>Maaş</th><th>Mesai(+)</th><th>Kesinti(-)</th><th>Net</th><th>Sil</th></tr>
                     </thead>
                     <tbody id="liste"></tbody>
                 </table>
@@ -138,6 +148,20 @@
     const DEFAULT_ADMIN = { email: "admin@test.com", pass: "1234" };
     let currentUser = sessionStorage.getItem("v24_user");
 
+    // MENÜ KONTROL
+    function toggleMenu() {
+        const drop = document.getElementById("myDropdown");
+        drop.style.display = drop.style.display === "block" ? "none" : "block";
+    }
+    window.onclick = function(event) {
+        if (!event.target.matches('.menu-btn')) {
+            const shared = document.getElementsByClassName("dropdown-content");
+            for (let i = 0; i < shared.length; i++) {
+                shared[i].style.display = "none";
+            }
+        }
+    }
+
     async function login() {
         const email = document.getElementById("authEmail").value;
         const pass = document.getElementById("authPass").value;
@@ -148,14 +172,14 @@
             if(user) {
                 sessionStorage.setItem("v24_user", email.replace(/\./g, '_'));
                 location.reload();
-            } else alert("Hata!");
+            } else alert("Giriş Bilgileri Geçersiz!");
         });
     }
 
     if(currentUser) {
         document.getElementById("loginPage").style.display = "none";
         document.getElementById("app").style.display = "block";
-        document.getElementById("topNav").style.display = "flex";
+        document.getElementById("navContainer").style.display = "block";
         if(currentUser === "admin@test_com") {
             document.getElementById("adminOnlyPanel").style.display = "block";
             adminListesiniGetir();
@@ -180,7 +204,7 @@
         });
     }
 
-    function adminSil(key) { if(confirm("Silinsin mi?")) db.ref('admins/' + key).remove(); }
+    function adminSil(key) { if(confirm("Kullanıcı silinsin mi?")) db.ref('admins/' + key).remove(); }
 
     function personelEkle() {
         if(!pAd.value || !pMaas.value) return;
@@ -211,7 +235,7 @@
         db.ref('personeller/' + currentUser).on('value', (snap) => {
             const data = snap.val();
             liste.innerHTML = "";
-            pSelect.innerHTML = '<option value="">Seç...</option>';
+            pSelect.innerHTML = '<option value="">Personel Seç...</option>';
             if(data) {
                 Object.keys(data).forEach(id => {
                     let p = data[id];
@@ -224,27 +248,48 @@
         });
     }
 
-    function sil(id) { if(confirm("Sil?")) db.ref('personeller/' + currentUser + '/' + id).remove(); }
+    function sil(id) { if(confirm("Personel silinsin mi?")) db.ref('personeller/' + currentUser + '/' + id).remove(); }
     function logout() { sessionStorage.clear(); location.reload(); }
 
     function exportToExcel() {
         db.ref('personeller/' + currentUser).once('value', (snap) => {
             let data = snap.val();
-            if(!data) return;
+            if(!data) return alert("Veri bulunamadı!");
             let csv = "\ufeffAd Soyad;Maas;Mesai;Avans;Kesinti;Net\n";
             Object.values(data).forEach(p => csv += `${p.ad};${p.maas};${p.mesai};${p.avans};${p.dev};${p.net}\n`);
             const a = document.createElement("a");
             a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'}));
-            a.download = "Rapor.csv"; a.click();
+            a.download = "Maas_Raporu.csv"; a.click();
         });
     }
 
     function fullDatabaseBackup() {
         db.ref('/').once('value', (snap) => {
+            const data = JSON.stringify(snap.val(), null, 2);
             const a = document.createElement("a");
-            a.href = URL.createObjectURL(new Blob([JSON.stringify(snap.val(), null, 2)], {type: 'application/json'}));
-            a.download = "Yedek.json"; a.click();
+            a.href = URL.createObjectURL(new Blob([data], {type: 'application/json'}));
+            a.download = `Sistem_Yedek_${new Date().toLocaleDateString()}.json`; 
+            a.click();
         });
+    }
+
+    // YEDEK YÜKLEME FONKSİYONU
+    function restoreBackup(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if(confirm("DİKKAT: Mevcut veritabanı silinecek ve bu yedek yüklenecek. Onaylıyor musunuz?")) {
+                    db.ref('/').set(data).then(() => {
+                        alert("Yedek başarıyla yüklendi! Sayfa yenileniyor...");
+                        location.reload();
+                    });
+                }
+            } catch (err) { alert("Hata: Geçersiz dosya formatı!"); }
+        };
+        reader.readAsText(file);
     }
 
     function addNewAdmin() {
