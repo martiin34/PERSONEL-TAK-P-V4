@@ -41,9 +41,9 @@
         .btn-main { background: var(--accent); color: white; padding: 10px 15px; }
         .btn-success { background: var(--success); color: white; width: 100%; padding: 12px; }
         .btn-mini-danger { background: var(--danger); color: white; padding: 4px 8px; font-size: 11px; border-radius: 4px; }
+        .btn-reset { background: #f39c12; color: white; padding: 4px 8px; font-size: 11px; border-radius: 4px; margin-right: 5px; }
         
-        /* Kullanıcı Yönetimi Özel Stili */
-        .admin-select-wrapper { margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; }
+        .admin-select-wrapper { margin-top: 15px; }
         .admin-item { background: #fdfdfd; border: 1px solid #eee; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
 
         .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -54,7 +54,7 @@
         .auth-box { width: 92%; max-width: 400px; margin: 80px auto; background: white; padding: 35px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; }
         
         #fileInput { display: none; }
-        #adminListContent { display: none; margin-top: 10px; }
+        #adminListContent { display: none; margin-top: 10px; padding: 10px; border-top: 1px solid #eee; }
     </style>
 </head>
 <body>
@@ -89,12 +89,12 @@
             <div class="form-row">
                 <input id="newAdminEmail" type="email" placeholder="Yeni E-posta">
                 <input id="newAdminPass" type="password" placeholder="Şifre">
-                <button class="btn-main" onclick="addNewAdmin()">Ekle</button>
+                <button class="btn-main" onclick="addNewAdmin()">Yeni Ekle</button>
             </div>
             
             <div class="admin-select-wrapper">
-                <button class="btn-main" style="width:100%; background:#95a5a6;" onclick="toggleAdminList()">
-                    👥 Kayıtlı Kullanıcıları Göster/Gizle
+                <button class="btn-main" style="width:100%; background:#95a5a6; font-size: 12px;" onclick="toggleAdminList()">
+                    👥 Kayıtlı Kullanıcıları Yönet (Aç/Kapat)
                 </button>
                 <div id="adminListContent">
                     <div id="adminListBody"></div>
@@ -109,12 +109,12 @@
                 <input id="pMaas" type="number" placeholder="Net Maaş">
                 <input id="pMesaiUcret" type="number" placeholder="Saatlik Mesai ₺">
                 <input id="pDevGunluk" type="number" placeholder="Günlük Devamsızlık ₺">
-                <button class="btn-success" onclick="personelEkle()">Sisteme Kaydet</button>
+                <button class="btn-success" onclick="personelEkle()">Kaydet</button>
             </div>
         </div>
 
         <div class="panel">
-            <h4>💰 Maaş & Avans İşlemleri</h4>
+            <h4>💰 Maaş & İşlemler</h4>
             <div class="form-row">
                 <select id="pSelect"></select>
                 <select id="islemTip">
@@ -128,11 +128,11 @@
         </div>
 
         <div class="panel">
-            <h4>📋 Personel Listesi</h4>
+            <h4>📋 Güncel Personel Listesi</h4>
             <div class="table-responsive">
                 <table>
                     <thead>
-                        <tr><th>Ad Soyad</th><th>Maaş</th><th>Mesai(+)</th><th>Kesinti(-)</th><th>Net</th><th>Sil</th></tr>
+                        <tr><th>Ad</th><th>Maaş</th><th>Mesai</th><th>Kesinti</th><th>Net</th><th>Sil</th></tr>
                     </thead>
                     <tbody id="liste"></tbody>
                 </table>
@@ -157,7 +157,6 @@
     const DEFAULT_ADMIN = { email: "admin@test.com", pass: "1234" };
     let currentUser = sessionStorage.getItem("v24_user");
 
-    // MENÜ FONKSİYONLARI
     function toggleMenu(id) {
         const drop = document.getElementById(id);
         drop.style.display = drop.style.display === "block" ? "none" : "block";
@@ -184,7 +183,7 @@
             if(user) {
                 sessionStorage.setItem("v24_user", email.replace(/\./g, '_'));
                 location.reload();
-            } else alert("Hata!");
+            } else alert("Hatalı Giriş!");
         });
     }
 
@@ -208,15 +207,25 @@
                 Object.keys(data).forEach(key => {
                     container.innerHTML += `
                         <div class="admin-item">
-                            <span style="font-size:13px;">${data[key].email}</span>
-                            <button class="btn-mini-danger" onclick="adminSil('${key}')">Sil</button>
+                            <span style="font-size:12px;">${data[key].email}</span>
+                            <div>
+                                <button class="btn-reset" onclick="resetAdminPass('${key}')">Şifre Reset</button>
+                                <button class="btn-mini-danger" onclick="adminSil('${key}')">Sil</button>
+                            </div>
                         </div>`;
                 });
             }
         });
     }
 
-    function adminSil(key) { if(confirm("Kullanıcı silinsin mi?")) db.ref('admins/' + key).remove(); }
+    function resetAdminPass(key) {
+        const newPass = prompt("Bu kullanıcı için yeni şifre belirleyin:");
+        if (newPass && newPass.length > 0) {
+            db.ref('admins/' + key).update({ pass: newPass }).then(() => alert("Şifre başarıyla güncellendi."));
+        }
+    }
+
+    function adminSil(key) { if(confirm("Kullanıcı tamamen silinecek?")) db.ref('admins/' + key).remove(); }
 
     function personelEkle() {
         if(!pAd.value || !pMaas.value) return;
@@ -247,7 +256,7 @@
         db.ref('personeller/' + currentUser).on('value', (snap) => {
             const data = snap.val();
             liste.innerHTML = "";
-            pSelect.innerHTML = '<option value="">Seç...</option>';
+            pSelect.innerHTML = '<option value="">Seçiniz...</option>';
             if(data) {
                 Object.keys(data).forEach(id => {
                     let p = data[id];
@@ -260,27 +269,26 @@
         });
     }
 
-    function sil(id) { if(confirm("Sil?")) db.ref('personeller/' + currentUser + '/' + id).remove(); }
+    function sil(id) { if(confirm("Personel silinsin mi?")) db.ref('personeller/' + currentUser + '/' + id).remove(); }
     function logout() { sessionStorage.clear(); location.reload(); }
 
     function exportToExcel() {
         db.ref('personeller/' + currentUser).once('value', (snap) => {
             let data = snap.val();
-            if(!data) return;
+            if(!data) return alert("Veri yok!");
             let csv = "\ufeffAd Soyad;Maas;Mesai;Avans;Kesinti;Net\n";
             Object.values(data).forEach(p => csv += `${p.ad};${p.maas};${p.mesai};${p.avans};${p.dev};${p.net}\n`);
             const a = document.createElement("a");
             a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'}));
-            a.download = "Personel_Raporu.csv"; a.click();
+            a.download = "Rapor.csv"; a.click();
         });
     }
 
     function fullDatabaseBackup() {
         db.ref('/').once('value', (snap) => {
-            const data = JSON.stringify(snap.val(), null, 2);
             const a = document.createElement("a");
-            a.href = URL.createObjectURL(new Blob([data], {type: 'application/json'}));
-            a.download = "Veri_Yedegi.json"; a.click();
+            a.href = URL.createObjectURL(new Blob([JSON.stringify(snap.val())], {type: 'application/json'}));
+            a.download = "Sistem_Yedek.json"; a.click();
         });
     }
 
@@ -291,7 +299,7 @@
         reader.onload = function(e) {
             try {
                 const data = JSON.parse(e.target.result);
-                if(confirm("Tüm veriler güncellenecek. Onaylıyor musunuz?")) {
+                if(confirm("Tüm veriler geri yüklensin mi?")) {
                     db.ref('/').set(data).then(() => { location.reload(); });
                 }
             } catch (err) { alert("Hata!"); }
@@ -300,9 +308,21 @@
     }
 
     function addNewAdmin() {
-        const m = document.getElementById("newAdminEmail").value;
-        const s = document.getElementById("newAdminPass").value;
-        if(m && s) db.ref('admins').push({ email: m, pass: s });
+        const m = document.getElementById("newAdminEmail").value.trim();
+        const s = document.getElementById("newAdminPass").value.trim();
+        if(!m || !s) return alert("Eksik bilgi!");
+        db.ref('admins').once('value', (snap) => {
+            const admins = snap.val();
+            let exists = false;
+            if (admins) exists = Object.values(admins).some(a => a.email.toLowerCase() === m.toLowerCase());
+            if (exists) alert("Zaten kayıtlı!");
+            else {
+                db.ref('admins').push({ email: m, pass: s });
+                document.getElementById("newAdminEmail").value = "";
+                document.getElementById("newAdminPass").value = "";
+                alert("Başarıyla eklendi.");
+            }
+        });
     }
 </script>
 </body>
