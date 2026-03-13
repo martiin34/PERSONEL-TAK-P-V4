@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Personel Takip Sistemi v14</title>
+    <title>Personel Yönetim Sistemi v17</title>
     <style>
         :root { --primary: #2c3e50; --accent: #3498db; --success: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; }
         * { box-sizing: border-box; }
@@ -18,15 +18,26 @@
         .btn-main { background: var(--accent); color: white; }
         .btn-success { background: var(--success); color: white; width: 100%; }
         .btn-danger { background: var(--danger); color: white; }
-        .btn-print { background: #7f8c8d; color: white; }
+        .btn-info { background: #95a5a6; color: white; }
+        
         @media (min-width: 768px) { .btn-success { width: auto; } }
+        
         .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        table { width: 100%; border-collapse: collapse; min-width: 650px; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
         th { background: #f8f9fa; color: #7f8c8d; text-transform: uppercase; font-size: 11px; }
-        .auth-box { width: 92%; max-width: 380px; margin: 80px auto; background: white; padding: 35px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; }
+
+        /* GİRİŞ EKRANI BUTON DÜZENİ */
+        .auth-box { width: 92%; max-width: 400px; margin: 80px auto; background: white; padding: 35px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; }
         .auth-box input { width: 100%; margin-bottom: 15px; }
-        #adminOnlyPanel { border: 2px dashed var(--accent); background: #f0faff; }
+        .auth-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+        .auth-buttons button { flex: 1; min-width: 140px; }
+
+        #adminOnlyPanel { border: 2px solid var(--accent); background: #f0faff; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-card { background: white; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #ddd; }
+        .stat-card div { font-weight: bold; font-size: 1.2rem; color: var(--accent); }
+        
         #printArea { display: none; }
         @media print {
             body * { visibility: hidden; }
@@ -47,18 +58,35 @@
 <div class="container">
     <div id="loginPage" class="auth-box">
         <h2 style="color: var(--primary); margin-bottom: 25px;">Sistem Girişi</h2>
-        <input id="authEmail" type="email" placeholder="E-posta">
-        <input id="authPass" type="password" placeholder="Şifre">
-        <button class="btn-main" style="width:100%" onclick="login()">Giriş Yap</button>
+        <input id="authEmail" type="email" placeholder="E-posta Adresiniz">
+        <input id="authPass" type="password" placeholder="Şifreniz">
+        <div class="auth-buttons">
+            <button class="btn-main" onclick="login()">Giriş Yap</button>
+            <button class="btn-info" onclick="forgotPassword()">Şifremi Unuttum</button>
+        </div>
     </div>
 
     <div id="app" style="display:none">
         <div id="adminOnlyPanel" class="panel" style="display:none">
-            <h4>🔑 Yeni Kullanıcı Tanımla</h4>
-            <div class="form-row">
-                <input id="newAdminEmail" type="email" placeholder="Yeni E-posta">
-                <input id="newAdminPass" type="password" placeholder="Yeni Şifre">
-                <button class="btn-main" onclick="addNewAdmin()">Kaydet</button>
+            <h4>🛡️ Sistem Kontrol Merkezi</h4>
+            <div class="stats-grid">
+                <div class="stat-card"><small>KULLANICI</small><div id="statUsers">0</div></div>
+                <div class="stat-card"><small>PERSONEL</small><div id="statPersonel">0</div></div>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <p style="font-weight: bold; font-size: 0.8rem; margin-bottom: 5px;">Yeni Kullanıcı Kaydet:</p>
+                <div class="form-row">
+                    <input id="newAdminEmail" type="email" placeholder="E-posta">
+                    <input id="newAdminPass" type="password" placeholder="Şifre">
+                    <button class="btn-main" onclick="addNewAdmin()">Kaydet</button>
+                </div>
+            </div>
+            <p style="font-weight: bold; font-size: 0.8rem; margin-bottom: 5px;">Sistemdeki Kullanıcılar:</p>
+            <div class="table-responsive" style="max-height: 150px;">
+                <table style="min-width: 100%;">
+                    <thead><tr><th>Kullanıcı</th><th>Şifre</th><th>Sil</th></tr></thead>
+                    <tbody id="userList"></tbody>
+                </table>
             </div>
         </div>
 
@@ -67,8 +95,8 @@
             <div class="form-row">
                 <input id="pAd" placeholder="Ad Soyad">
                 <input id="pMaas" type="number" placeholder="Sabit Maaş">
-                <input id="pMesaiUcret" type="number" placeholder="Saatlik Mesai Ücreti">
-                <input id="pDevGunluk" type="number" placeholder="1 Günlük Devamsızlık Bedeli">
+                <input id="pMesaiUcret" type="number" placeholder="Mesai 1 Saat ₺">
+                <input id="pDevGunluk" type="number" placeholder="Devamsızlık 1 Gün ₺">
                 <button class="btn-success" onclick="personelEkle()">Kaydet</button>
             </div>
         </div>
@@ -82,8 +110,8 @@
                     <option value="avans">Avans (₺)</option>
                     <option value="dev_gun">Devamsızlık (Gün)</option>
                 </select>
-                <input id="islemMiktar" type="number" placeholder="Miktar (Saat/Gün/₺)">
-                <button class="btn-main" style="flex: 1 1 100%;" onclick="islemYap()">Kaydet</button>
+                <input id="islemMiktar" type="number" placeholder="Miktar">
+                <button class="btn-main" style="flex: 1 1 100%;" onclick="islemYap()">Hesapla ve Kaydet</button>
             </div>
         </div>
 
@@ -95,9 +123,9 @@
                         <tr>
                             <th>Ad Soyad</th>
                             <th>Maaş</th>
-                            <th>Mesai</th>
-                            <th>Avans</th>
-                            <th>Kesinti</th>
+                            <th>Mesai (+)</th>
+                            <th>Avans (-)</th>
+                            <th>Kesinti (-)</th>
                             <th>Net</th>
                             <th style="text-align:right">İşlem</th>
                         </tr>
@@ -110,10 +138,10 @@
 </div>
 
 <div id="printArea">
-    <div style="border: 4px solid #000; padding: 40px; background: white; min-height: 500px;">
+    <div style="border: 4px solid #000; padding: 40px; background: white;">
         <h1 style="text-align:center; text-decoration: underline;">MAAŞ ÖDEME BORDROSU</h1>
         <div id="printContent" style="font-size:1.4rem; line-height:2.5;"></div>
-        <br><br><br>
+        <br><br>
         <div style="display:flex; justify-content:space-between; font-weight:bold;">
             <p>YÖNETİCİ ONAY</p>
             <p>PERSONEL İMZA</p>
@@ -123,14 +151,22 @@
 
 <script>
     const SUPER_ADMIN = "admin@test.com";
-    let admins = JSON.parse(localStorage.getItem("v14_admins")) || [{email: SUPER_ADMIN, pass: "1234"}];
-    let allData = JSON.parse(localStorage.getItem("v14_data")) || [];
-    let currentUser = sessionStorage.getItem("v14_user");
+    let admins = JSON.parse(localStorage.getItem("v17_admins")) || [{email: SUPER_ADMIN, pass: "1234"}];
+    let allData = JSON.parse(localStorage.getItem("v17_data")) || [];
+    let currentUser = sessionStorage.getItem("v17_user");
 
     function login() {
         let user = admins.find(a => a.email == authEmail.value && a.pass == authPass.value);
-        if(user) { sessionStorage.setItem("v14_user", user.email); currentUser = user.email; initApp(); }
-        else alert("Giriş hatalı!");
+        if(user) { sessionStorage.setItem("v17_user", user.email); currentUser = user.email; initApp(); }
+        else alert("Giriş başarısız!");
+    }
+
+    function forgotPassword() {
+        let email = prompt("Lütfen kayıtlı e-posta adresinizi girin:");
+        if(!email) return;
+        let user = admins.find(a => a.email === email);
+        if(user) alert("Hesabınıza ait şifre: " + user.pass);
+        else alert("Bu e-posta sistemde kayıtlı değil!");
     }
 
     function initApp() {
@@ -138,19 +174,46 @@
         loginPage.style.display = "none";
         app.style.display = "block";
         topNav.style.display = "flex";
-        if(currentUser === SUPER_ADMIN) document.getElementById("adminOnlyPanel").style.display = "block";
+        if(currentUser === SUPER_ADMIN) {
+            document.getElementById("adminOnlyPanel").style.display = "block";
+            renderAdminPanel();
+        }
         render();
     }
 
+    function renderAdminPanel() {
+        statUsers.innerText = admins.length;
+        statPersonel.innerText = allData.length;
+        userList.innerHTML = "";
+        admins.forEach((adm, index) => {
+            if(adm.email === SUPER_ADMIN) return;
+            userList.innerHTML += `<tr>
+                <td>${adm.email}</td>
+                <td>${adm.pass}</td>
+                <td><button class="btn-danger" style="padding:2px 8px;" onclick="deleteUser(${index})">X</button></td>
+            </tr>`;
+        });
+    }
+
+    function deleteUser(index) {
+        if(confirm("Bu kullanıcıyı silerseniz tüm kayıtları gider. Emin misiniz?")) {
+            admins.splice(index, 1);
+            localStorage.setItem("v17_admins", JSON.stringify(admins));
+            renderAdminPanel();
+        }
+    }
+
     function addNewAdmin() {
+        if(!newAdminEmail.value || !newAdminPass.value) return;
         admins.push({ email: newAdminEmail.value, pass: newAdminPass.value });
-        localStorage.setItem("v14_admins", JSON.stringify(admins));
-        alert("Kullanıcı eklendi.");
+        localStorage.setItem("v17_admins", JSON.stringify(admins));
         newAdminEmail.value = ""; newAdminPass.value = "";
+        renderAdminPanel();
+        alert("Yeni kullanıcı oluşturuldu.");
     }
 
     function personelEkle() {
-        if(!pAd.value || !pMaas.value || !pDevGunluk.value) return alert("Lütfen tüm alanları doldurun!");
+        if(!pAd.value || !pMaas.value || !pDevGunluk.value) return alert("Bilgiler eksik!");
         allData.push({
             id: Date.now(), owner: currentUser,
             ad: pAd.value, maas: +pMaas.value, mUcret: +pMesaiUcret.value,
@@ -161,12 +224,12 @@
     }
 
     function islemYap() {
-        if(!pSelect.value) return;
+        if(!pSelect.value || !islemMiktar.value) return;
         let p = allData.find(x => x.id == pSelect.value);
-        let val = +islemMiktar.value;
-        if(islemTip.value == "mesai") p.mesai += (val * p.mUcret);
-        else if(islemTip.value == "avans") p.avans += val;
-        else if(islemTip.value == "dev_gun") p.dev += (val * p.devGunluk);
+        let miktar = +islemMiktar.value;
+        if(islemTip.value == "mesai") p.mesai += (miktar * p.mUcret);
+        else if(islemTip.value == "avans") p.avans += miktar;
+        else if(islemTip.value == "dev_gun") p.dev += (miktar * p.devGunluk);
         p.net = p.maas + p.mesai - p.avans - p.dev;
         save();
         islemMiktar.value = "";
@@ -196,20 +259,19 @@
         let p = allData.find(x => x.id == id);
         document.getElementById("printContent").innerHTML = `
             <p><b>PERSONEL:</b> ${p.ad.toUpperCase()}</p>
-            <p><b>AYLIK SABİT MAAŞ:</b> ${p.maas} ₺</p>
-            <p><b>MESAİ TOPLAMI:</b> ${p.mesai} ₺</p>
-            <p><b>TOPLAM KESİNTİ (AVANS+DEVAMSIZLIK):</b> ${p.avans + p.dev} ₺</p>
+            <p><b>AYLIK MAAŞ:</b> ${p.maas} ₺</p>
+            <p><b>MESAİ:</b> ${p.mesai} ₺</p>
+            <p><b>AVANS/KESİNTİ:</b> ${p.avans + p.dev} ₺</p>
             <hr>
-            <h2 style="font-size: 2rem;">NET ÖDENECEK: ${p.net} ₺</h2>
+            <h2>NET ÖDEME: ${p.net} ₺</h2>
         `;
         window.print();
     }
 
-    function sil(id) { if(confirm("Silmek istediğinize emin misiniz?")) { allData = allData.filter(x => x.id !== id); save(); } }
-    function save() { localStorage.setItem("v14_data", JSON.stringify(allData)); render(); }
+    function sil(id) { if(confirm("Silinsin mi?")) { allData = allData.filter(x => x.id !== id); save(); } }
+    function save() { localStorage.setItem("v17_data", JSON.stringify(allData)); render(); }
     function logout() { sessionStorage.clear(); location.reload(); }
     if(currentUser) initApp();
 </script>
 </body>
 </html>
-
