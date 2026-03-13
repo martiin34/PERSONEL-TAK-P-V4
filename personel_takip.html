@@ -1,265 +1,215 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Personel Takip</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<style>
-body{font-family:Arial,sans-serif;margin:0;background:#f3f4f6;font-size:13px;}
-header{background:#1e293b;color:white;padding:10px;width:100%;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:10;}
-header .menu-btns{display:flex;gap:5px;}
-header .menu-btns button{background:#2563eb;color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;}
-header .menu-btns button:hover{background:#1d4ed8;}
-.container-wrapper{display:flex;justify-content:center;width:100%;}
-.container{padding:10px;width:100%;max-width:960px;box-sizing:border-box;background:white;margin:10px 0;border-radius:6px;}
-input,select,button{padding:10px;margin:5px 0;box-sizing:border-box;font-size:13px;width:100%;}
-button{border-radius:4px;cursor:pointer;}
-.login{width:90%;max-width:320px;margin:50px auto;background:white;padding:15px;border-radius:6px;}
-.table-container{overflow-x:auto;width:100%;}
-table{border-collapse:collapse;width:100%;table-layout:auto;min-width:700px;}
-th,td{border:1px solid #ddd;padding:6px;text-align:center;font-size:12px;white-space:normal;word-wrap:break-word;}
-thead th{background:#1e293b;color:white;position:sticky;top:0;z-index:2;}
-.photo{width:30px;height:30px;border-radius:6px;object-fit:cover;}
-.icon-btn{background:#2563eb;color:white;border:none;border-radius:4px;cursor:pointer;padding:2px 4px;font-size:11px;}
-.icon-btn:hover{background:#1d4ed8;}
-.detail-row td{background:#f9fafb;text-align:left;font-size:11px;}
-#adminPanel{display:none;background:#eef;padding:10px;border-radius:6px;margin-top:10px;}
-@media(max-width:600px){
-.container-wrapper{justify-content:flex-start;}
-table, th, td{font-size:11px;padding:4px;}
-.photo{width:25px; height:25px;}
-input, button{font-size:12px; padding:8px;}
-header{flex-direction:column;align-items:flex-start;}
-header .menu-btns{margin-top:5px;}
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Personel Takip Sistemi v14</title>
+    <style>
+        :root { --primary: #2c3e50; --accent: #3498db; --success: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); color: #333; }
+        header { background: var(--primary); color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+        .container { padding: 15px; max-width: 1200px; margin: auto; }
+        .panel { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #eee; }
+        .panel h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary); border-left: 4px solid var(--accent); padding-left: 10px; }
+        .form-row { display: flex; flex-wrap: wrap; gap: 10px; }
+        input, select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; flex: 1; min-width: 160px; font-size: 16px; }
+        button { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.3s; font-size: 14px; }
+        .btn-main { background: var(--accent); color: white; }
+        .btn-success { background: var(--success); color: white; width: 100%; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-print { background: #7f8c8d; color: white; }
+        @media (min-width: 768px) { .btn-success { width: auto; } }
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; min-width: 650px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        th { background: #f8f9fa; color: #7f8c8d; text-transform: uppercase; font-size: 11px; }
+        .auth-box { width: 92%; max-width: 380px; margin: 80px auto; background: white; padding: 35px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; }
+        .auth-box input { width: 100%; margin-bottom: 15px; }
+        #adminOnlyPanel { border: 2px dashed var(--accent); background: #f0faff; }
+        #printArea { display: none; }
+        @media print {
+            body * { visibility: hidden; }
+            #printArea { display: block !important; visibility: visible; position: absolute; left: 0; top: 0; width: 100%; padding: 30px; }
+            #printArea * { visibility: visible; }
+        }
+    </style>
 </head>
 <body>
 
 <header>
-<div>Personel Takip</div>
-<div class="menu-btns" id="headerBtns" style="display:none">
-<button onclick="excel()">Excel</button>
-<button onclick="adminGoster()">Admin</button>
-<button onclick="logout()">Çıkış</button>
-</div>
+    <div style="font-weight: bold; font-size: 1.2rem;">👤 Personel Takip</div>
+    <div id="topNav" style="display:none">
+        <button onclick="logout()" class="btn-danger" style="padding: 6px 12px;">Çıkış</button>
+    </div>
 </header>
 
-<div class="container-wrapper">
-<div class="login" id="loginPage">
-<h3>Giriş</h3>
-<input id="user" type="email" placeholder="Email" required>
-<input id="pass" type="password" placeholder="Şifre" required>
-<button onclick="login()">Giriş</button>
-<button type="button" onclick="sifreReset()" style="background:#f59e0b;margin-top:5px;">Şifre Sıfırla</button>
+<div class="container">
+    <div id="loginPage" class="auth-box">
+        <h2 style="color: var(--primary); margin-bottom: 25px;">Sistem Girişi</h2>
+        <input id="authEmail" type="email" placeholder="E-posta">
+        <input id="authPass" type="password" placeholder="Şifre">
+        <button class="btn-main" style="width:100%" onclick="login()">Giriş Yap</button>
+    </div>
+
+    <div id="app" style="display:none">
+        <div id="adminOnlyPanel" class="panel" style="display:none">
+            <h4>🔑 Yeni Kullanıcı Tanımla</h4>
+            <div class="form-row">
+                <input id="newAdminEmail" type="email" placeholder="Yeni E-posta">
+                <input id="newAdminPass" type="password" placeholder="Yeni Şifre">
+                <button class="btn-main" onclick="addNewAdmin()">Kaydet</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h4>➕ Personel Kayıt</h4>
+            <div class="form-row">
+                <input id="pAd" placeholder="Ad Soyad">
+                <input id="pMaas" type="number" placeholder="Sabit Maaş">
+                <input id="pMesaiUcret" type="number" placeholder="Saatlik Mesai Ücreti">
+                <input id="pDevGunluk" type="number" placeholder="1 Günlük Devamsızlık Bedeli">
+                <button class="btn-success" onclick="personelEkle()">Kaydet</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h4>💰 İşlem Uygula</h4>
+            <div class="form-row">
+                <select id="pSelect"></select>
+                <select id="islemTip">
+                    <option value="mesai">Mesai (Saat)</option>
+                    <option value="avans">Avans (₺)</option>
+                    <option value="dev_gun">Devamsızlık (Gün)</option>
+                </select>
+                <input id="islemMiktar" type="number" placeholder="Miktar (Saat/Gün/₺)">
+                <button class="btn-main" style="flex: 1 1 100%;" onclick="islemYap()">Kaydet</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h4>📋 Maaş Çizelgesi</h4>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ad Soyad</th>
+                            <th>Maaş</th>
+                            <th>Mesai</th>
+                            <th>Avans</th>
+                            <th>Kesinti</th>
+                            <th>Net</th>
+                            <th style="text-align:right">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="liste"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div id="printArea">
+    <div style="border: 4px solid #000; padding: 40px; background: white; min-height: 500px;">
+        <h1 style="text-align:center; text-decoration: underline;">MAAŞ ÖDEME BORDROSU</h1>
+        <div id="printContent" style="font-size:1.4rem; line-height:2.5;"></div>
+        <br><br><br>
+        <div style="display:flex; justify-content:space-between; font-weight:bold;">
+            <p>YÖNETİCİ ONAY</p>
+            <p>PERSONEL İMZA</p>
+        </div>
+    </div>
 </div>
-
-<div class="container-wrapper">
-<div id="app" class="container" style="display:none">
-
-<h3>Personel Ekle</h3>
-<input id="ad" placeholder="Ad">
-<input id="tel" placeholder="Telefon">
-<input id="maas" type="number" placeholder="Maaş">
-<input id="mesaiUcret" type="number" placeholder="Mesai Saat Ücreti">
-<input id="devUcret" type="number" placeholder="Devamsızlık Ücret">
-<input type="file" id="foto">
-<button onclick="personelEkle()">Personel Ekle</button>
-
-<hr>
-<h3>İşlem</h3>
-<select id="personelSelect"></select>
-<select id="islemTip">
-<option value="mesai">Mesai</option>
-<option value="avans">Avans</option>
-<option value="dev">Devamsızlık</option>
-</select>
-<input id="islemDeger" type="number" placeholder="Değer">
-<button onclick="islemEkle()">İşlem Ekle</button>
-
-<hr>
-<input id="arama" placeholder="Personel Ara" onkeyup="render()">
-
-<div class="table-container">
-<table>
-<thead>
-<tr>
-<th>Foto</th>
-<th>Ad</th>
-<th>Telefon</th>
-<th>Maaş</th>
-<th>Mesai</th>
-<th>Avans</th>
-<th>Dev</th>
-<th>Net</th>
-<th>Detay</th>
-<th>Sil</th>
-</tr>
-</thead>
-<tbody id="liste"></tbody>
-</table>
-</div>
-
-<div id="adminPanel">
-<h3>Admin Paneli - Kullanıcı Ekle</h3>
-<input id="newUserEmail" placeholder="Email">
-<input id="newUserPass" type="password" placeholder="Şifre">
-<button onclick="kullaniciEkle()">Kullanıcı Ekle</button>
-</div>
-
-</div>
-</div>
-
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <script>
-const firebaseConfig={
-apiKey:"AIzaSyDuT34Y5OH8btCP_nRqgtAl2FA8UtJftwE",
-authDomain:"personel-takip-adc2e.firebaseapp.com",
-projectId:"personel-takip-adc2e",
-};
-firebase.initializeApp(firebaseConfig);
-firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    const SUPER_ADMIN = "admin@test.com";
+    let admins = JSON.parse(localStorage.getItem("v14_admins")) || [{email: SUPER_ADMIN, pass: "1234"}];
+    let allData = JSON.parse(localStorage.getItem("v14_data")) || [];
+    let currentUser = sessionStorage.getItem("v14_user");
 
-let data=JSON.parse(localStorage.getItem("personel"))||[];
+    function login() {
+        let user = admins.find(a => a.email == authEmail.value && a.pass == authPass.value);
+        if(user) { sessionStorage.setItem("v14_user", user.email); currentUser = user.email; initApp(); }
+        else alert("Giriş hatalı!");
+    }
 
-function save(){localStorage.setItem("personel",JSON.stringify(data))}
+    function initApp() {
+        if(!currentUser) return;
+        loginPage.style.display = "none";
+        app.style.display = "block";
+        topNav.style.display = "flex";
+        if(currentUser === SUPER_ADMIN) document.getElementById("adminOnlyPanel").style.display = "block";
+        render();
+    }
 
-firebase.auth().onAuthStateChanged(user=>{
-if(user){
-loginPage.style.display="none";app.style.display="block";headerBtns.style.display="flex"; render();}
-else{loginPage.style.display="block";app.style.display="none";headerBtns.style.display="none";}
-});
+    function addNewAdmin() {
+        admins.push({ email: newAdminEmail.value, pass: newAdminPass.value });
+        localStorage.setItem("v14_admins", JSON.stringify(admins));
+        alert("Kullanıcı eklendi.");
+        newAdminEmail.value = ""; newAdminPass.value = "";
+    }
 
-function login(){
-let email=user.value, password=pass.value;
-if(!email || !password){alert("Email ve Şifre gerekli"); return;}
-firebase.auth().signInWithEmailAndPassword(email,password)
-.catch(err=>alert(err.message));
-}
+    function personelEkle() {
+        if(!pAd.value || !pMaas.value || !pDevGunluk.value) return alert("Lütfen tüm alanları doldurun!");
+        allData.push({
+            id: Date.now(), owner: currentUser,
+            ad: pAd.value, maas: +pMaas.value, mUcret: +pMesaiUcret.value,
+            devGunluk: +pDevGunluk.value, mesai: 0, avans: 0, dev: 0, net: +pMaas.value
+        });
+        save();
+        ["pAd", "pMaas", "pMesaiUcret", "pDevGunluk"].forEach(id => document.getElementById(id).value = "");
+    }
 
-function sifreReset(){
-let email=prompt("Şifre sıfırlama için email giriniz:");
-if(email)firebase.auth().sendPasswordResetEmail(email).then(()=>alert("Şifre sıfırlama maili gönderildi")).catch(e=>alert(e.message));
-}
+    function islemYap() {
+        if(!pSelect.value) return;
+        let p = allData.find(x => x.id == pSelect.value);
+        let val = +islemMiktar.value;
+        if(islemTip.value == "mesai") p.mesai += (val * p.mUcret);
+        else if(islemTip.value == "avans") p.avans += val;
+        else if(islemTip.value == "dev_gun") p.dev += (val * p.devGunluk);
+        p.net = p.maas + p.mesai - p.avans - p.dev;
+        save();
+        islemMiktar.value = "";
+    }
 
-function logout(){firebase.auth().signOut();}
+    function render() {
+        let myData = allData.filter(p => p.owner === currentUser);
+        liste.innerHTML = "";
+        pSelect.innerHTML = '<option value="">Personel Seçin...</option>';
+        myData.forEach(p => {
+            pSelect.innerHTML += `<option value="${p.id}">${p.ad}</option>`;
+            liste.innerHTML += `<tr>
+                <td><b>${p.ad}</b></td>
+                <td>${p.maas}₺</td>
+                <td style="color:var(--success)">+${p.mesai}₺</td>
+                <td style="color:var(--danger)">-${p.avans}₺</td>
+                <td style="color:var(--danger)">-${p.dev}₺</td>
+                <td><b>${p.net}₺</b></td>
+                <td style="text-align:right">
+                    <button class="btn-print" onclick="detay(${p.id})">📄</button>
+                    <button class="btn-danger" onclick="sil(${p.id})">X</button>
+                </td></tr>`;
+        });
+    }
 
-function hesapla(p){p.net=Number(p.maas)+Number(p.mesai)-Number(p.avans)-Number(p.dev)}
+    function detay(id) {
+        let p = allData.find(x => x.id == id);
+        document.getElementById("printContent").innerHTML = `
+            <p><b>PERSONEL:</b> ${p.ad.toUpperCase()}</p>
+            <p><b>AYLIK SABİT MAAŞ:</b> ${p.maas} ₺</p>
+            <p><b>MESAİ TOPLAMI:</b> ${p.mesai} ₺</p>
+            <p><b>TOPLAM KESİNTİ (AVANS+DEVAMSIZLIK):</b> ${p.avans + p.dev} ₺</p>
+            <hr>
+            <h2 style="font-size: 2rem;">NET ÖDENECEK: ${p.net} ₺</h2>
+        `;
+        window.print();
+    }
 
-function personelEkle(){
-let reader=new FileReader(), file=foto.files[0];
-reader.onload=function(e){
-let p={ad:ad.value,tel:tel.value,maas:Number(maas.value)||0,mesaiSaat:Number(mesaiUcret.value)||0,devBaz:Number(devUcret.value)||0,mesai:0,avans:0,dev:0,h:[],foto:e.target.result};
-hesapla(p); data.push(p); save(); render();
-}
-if(file){reader.readAsDataURL(file);}else{reader.onload({target:{result:""}});}
-}
-
-function islemEkle(){
-let i=personelSelect.value, tip=islemTip.value, v=Number(islemDeger.value), p=data[i], tut=0;
-if(tip=="mesai"){tut=v*p.mesaiSaat;p.mesai+=tut;}
-if(tip=="avans"){tut=v;p.avans+=tut;}
-if(tip=="dev"){tut=v*p.devBaz;p.dev+=tut;}
-p.h.push({t:new Date().toLocaleDateString(),tip:tip,v:v,tut:tut});
-hesapla(p); save(); islemDeger.value="";
-render();
-}
-
-function toggleDetailRow(rowId){
-const detailRow=document.getElementById("detail-"+rowId);
-if(detailRow.style.display==="table-row"){detailRow.style.display="none";}
-else{detailRow.style.display="table-row";}
-}
-
-function yazdirDetay(i){
-let p=data[i];
-let content=`<h3>${p.ad} Detay</h3>`;
-if(p.h.length===0){content+="<p>Detay yok</p>";}
-else{
-content+="<table border='1' style='width:100%;border-collapse:collapse;'><tr><th>Tarih</th><th>Tip</th><th>Değer</th><th>Tutar</th></tr>";
-p.h.forEach(x=>{content+=`<tr><td>${x.t}</td><td>${x.tip}</td><td>${x.v}</td><td>${x.tut}₺</td></tr>`;});
-content+="</table>";
-}
-let w=window.open(); w.document.write(content); w.print(); w.close();
-}
-
-function render(){
-let aramaText=arama.value.toLowerCase();
-liste.innerHTML=""; personelSelect.innerHTML="";
-data.forEach((p,i)=>{
-if(!p.ad.toLowerCase().includes(aramaText)) return;
-liste.innerHTML+=`
-<tr>
-<td>${p.foto?'<img src="'+p.foto+'" class="photo">':''}</td>
-<td>${p.ad}</td>
-<td>${p.tel}</td>
-<td>${p.maas}</td>
-<td>${p.mesai}</td>
-<td>${p.avans}</td>
-<td>${p.dev}</td>
-<td>${p.net}</td>
-<td>
-<button class="icon-btn" onclick="toggleDetailRow(${i})"><i class="fa-solid fa-eye"></i></button>
-<button class="icon-btn" onclick="yazdirDetay(${i})" title="Yazdır"><i class="fa-solid fa-print"></i></button>
-</td>
-<td><button class="icon-btn" onclick="sil(${i})"><i class="fa-solid fa-trash"></i></button></td>
-</tr>`;
-let detayHtml="";
-p.h.forEach(x=>{detayHtml+=`${x.t} - ${x.tip} - ${x.v} - ${x.tut}₺<br>`;});
-liste.innerHTML+=`
-<tr id="detail-${i}" class="detail-row" style="display:none;">
-<td colspan="10">${detayHtml || "Detay yok"}</td>
-</tr>`;
-personelSelect.innerHTML+=`<option value="${i}">${p.ad}</option>`;
-})
-}
-
-function sil(i){if(confirm("Silmek istiyor musunuz?")){data.splice(i,1);save();render();}}
-
-function excel(){
-let ws=[["Ad","Tel","Maaş","Mesai","Avans","Dev","Net"]];
-data.forEach(p=>{ws.push([p.ad,p.tel,p.maas,p.mesai,p.avans,p.dev,p.net]);});
-const wsheet=XLSX.utils.aoa_to_sheet(ws), wb=XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(wb,wsheet,"Personel");
-XLSX.writeFile(wb,"personel.xlsx");
-}
-
-// Admin paneli
-function adminGoster(){
-let sifre=prompt("Admin panel şifresi:");
-if(sifre==="147852"){ document.getElementById("adminPanel").style.display="block"; }
-else{alert("Şifre yanlış!");}
-}
-
-function kullaniciEkle(){
-let email = newUserEmail.value.trim();
-let pass = newUserPass.value.trim();
-if(!email || !pass){ alert("Email ve şifre girin!"); return; }
-firebase.auth().fetchSignInMethodsForEmail(email)
-.then(methods => {
-      if(methods.length > 0){
-          alert("Bu email zaten kayıtlı! Başka bir email deneyin.");
-      } else {
-          firebase.auth().createUserWithEmailAndPassword(email, pass)
-          .then(userCredential => {
-              alert("Kullanıcı eklendi!");
-              newUserEmail.value = "";
-              newUserPass.value = "";
-          })
-          .catch(err => {
-              alert("Kullanıcı eklenemedi: " + err.message);
-          });
-      }
-})
-.catch(err => {
-      alert("Email kontrol hatası: " + err.message);
-});
-}
+    function sil(id) { if(confirm("Silmek istediğinize emin misiniz?")) { allData = allData.filter(x => x.id !== id); save(); } }
+    function save() { localStorage.setItem("v14_data", JSON.stringify(allData)); render(); }
+    function logout() { sessionStorage.clear(); location.reload(); }
+    if(currentUser) initApp();
 </script>
 </body>
 </html>
+
