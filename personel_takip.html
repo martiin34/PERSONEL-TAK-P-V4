@@ -1,10 +1,9 @@
-   
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Personel Takip Cloud v25</title>
+    <title>Personel Takip Cloud v35</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -15,81 +14,106 @@
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); color: #333; }
         header { background: var(--primary); color: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
         .container { padding: 15px; max-width: 1200px; margin: auto; }
-        .panel { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .panel { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #eee; }
+        .panel h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary); border-left: 4px solid var(--accent); padding-left: 10px; }
         .form-row { display: flex; flex-wrap: wrap; gap: 10px; }
-        input, select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; flex: 1; min-width: 140px; font-size: 16px; }
-        button { padding: 12px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: 0.3s; }
-        .btn-main { background: var(--accent); color: white; width: 100%; }
-        .btn-success { background: var(--success); color: white; }
+        input, select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; flex: 1; min-width: 140px; font-size: 15px; }
+        button { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; }
+        .btn-main { background: var(--accent); color: white; }
+        .btn-success { background: var(--success); color: white; width: 100%; }
         .btn-danger { background: var(--danger); color: white; }
-        .auth-box { width: 92%; max-width: 400px; margin: 60px auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
-        .table-responsive { width: 100%; overflow-x: auto; }
+        .btn-excel { background: #1f6e43; color: white; }
+        .btn-backup { background: #6c5ce7; color: white; }
+        
+        /* Küçük Sil Butonu Stili */
+        .btn-mini-danger { 
+            background: var(--danger); 
+            color: white; 
+            padding: 4px 8px; 
+            font-size: 11px; 
+            border-radius: 4px;
+        }
+
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        #loadingOverlay { display:none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:9999; justify-content:center; align-items:center; flex-direction:column; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        th { background: #f8f9fa; color: #7f8c8d; text-transform: uppercase; font-size: 11px; }
+        .auth-box { width: 92%; max-width: 400px; margin: 80px auto; background: white; padding: 35px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; }
+        
+        .admin-item { 
+            background: #fdfdfd; 
+            border: 1px solid #eee; 
+            padding: 8px 12px; 
+            border-radius: 8px; 
+            margin-bottom: 8px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
     </style>
 </head>
 <body>
 
-<div id="loadingOverlay">🔄 İşlem Yapılıyor...</div>
-
 <header>
-    <div>🌍 Personel Takip Bulut</div>
+    <div style="font-weight: bold;">🌍  Personel Sistem</div>
     <div id="topNav" style="display:none; gap: 5px;">
-        <button onclick="exportToExcel()" style="background:#1f6e43; color:white; padding:5px 10px;">Excel</button>
-        <button onclick="logout()" class="btn-danger" style="padding:5px 10px;">Çıkış</button>
+        <button onclick="exportToExcel()" class="btn-excel">Excel Rapor</button>
+        <button onclick="fullDatabaseBackup()" class="btn-backup">Yedek Al</button>
+        <button onclick="logout()" class="btn-danger">Çıkış</button>
     </div>
 </header>
 
 <div class="container">
     <div id="loginPage" class="auth-box">
-        <h2 style="margin-bottom:20px;">Sistem Girişi</h2>
-        <input id="authEmail" type="email" placeholder="E-posta" style="width:100%; margin-bottom:15px;">
-        <input id="authPass" type="password" placeholder="Şifre" style="width:100%; margin-bottom:20px;">
-        <button class="btn-main" onclick="login()">Giriş Yap</button>
-        <p id="errorMsg" style="color:red; font-size:12px; margin-top:10px; display:none;"></p>
+        <h2>Yönetici Girişi</h2>
+        <input id="authEmail" type="email" placeholder="E-posta">
+        <input id="authPass" type="password" placeholder="Şifre">
+        <button class="btn-main" style="width:100%; padding: 15px;" onclick="login()">Sisteme Gir</button>
     </div>
 
     <div id="app" style="display:none">
-        <div id="adminPanel" class="panel" style="display:none; border:2px solid var(--accent);">
-            <h4>🛡️ Admin Paneli</h4>
+        
+        <div id="adminOnlyPanel" class="panel" style="display:none; border: 2px solid var(--accent);">
+            <h4>🛡️ Kullanıcı Yönetim Paneli</h4>
             <div class="form-row">
-                <input id="newEmail" placeholder="Yeni E-posta">
-                <input id="newPass" placeholder="Yeni Şifre">
-                <button class="btn-main" style="width:auto;" onclick="addNewUser()">Ekle</button>
+                <input id="newAdminEmail" type="email" placeholder="Yeni E-posta">
+                <input id="newAdminPass" type="password" placeholder="Şifre">
+                <button class="btn-main" onclick="addNewAdmin()">Ekle</button>
             </div>
+            <div id="adminListBody" style="margin-top:15px;"></div>
         </div>
 
         <div class="panel">
             <h4>➕ Personel Kaydı</h4>
             <div class="form-row">
-                <input id="pAd" placeholder="Ad Soyad">
-                <input id="pMaas" type="number" placeholder="Maaş">
-                <input id="pMesai" type="number" placeholder="Mesai 1s ₺">
-                <input id="pKesinti" type="number" placeholder="Kesinti 1g ₺">
-                <button class="btn-success" style="flex:1 1 100%" onclick="savePersonel()">Veritabanına Kaydet</button>
+                <input id="pAd" placeholder="Personel Adı">
+                <input id="pMaas" type="number" placeholder="Net Maaş">
+                <input id="pMesaiUcret" type="number" placeholder="Saatlik Mesai ₺">
+                <input id="pDevGunluk" type="number" placeholder="Günlük Devamsızlık ₺">
+                <button class="btn-success" onclick="personelEkle()">Kaydet</button>
             </div>
         </div>
 
         <div class="panel">
-            <h4>💰 Maaş İşlemi</h4>
+            <h4>💰 Maaş & Avans İşlemleri</h4>
             <div class="form-row">
                 <select id="pSelect"></select>
-                <select id="iTip">
+                <select id="islemTip">
                     <option value="mesai">Mesai (Saat)</option>
                     <option value="avans">Avans (₺)</option>
-                    <option value="dev">Devamsızlık (Gün)</option>
+                    <option value="dev_gun">Devamsızlık (Gün)</option>
                 </select>
-                <input id="iMiktar" type="number" placeholder="Miktar">
-                <button class="btn-main" onclick="runProcess()">Hesapla</button>
+                <input id="islemMiktar" type="number" placeholder="Miktar">
+                <button class="btn-main" style="flex:1 1 100%" onclick="islemYap()">Uygula</button>
             </div>
         </div>
 
         <div class="panel">
+            <h4>📋 Güncel Maaş Listesi</h4>
             <div class="table-responsive">
                 <table>
                     <thead>
-                        <tr><th>Ad Soyad</th><th>Maaş</th><th>Mesai(+)</th><th>Kesinti(-)</th><th>Net</th><th>Sil</th></tr>
+                        <tr><th>Ad Soyad</th><th>Maaş</th><th>Mesai(+)</th><th>Kesinti(-)</th><th>Net Maaş</th><th>Sil</th></tr>
                     </thead>
                     <tbody id="liste"></tbody>
                 </table>
@@ -99,7 +123,6 @@
 </div>
 
 <script>
-    // Sizin Firebase Konfigürasyonunuz
     const firebaseConfig = {
         apiKey: "AIzaSyC__15sb5F4OAMkWfrZIRXfJyGDCkehI84",
         authDomain: "personeltakip-7e75d.firebaseapp.com",
@@ -110,120 +133,125 @@
         appId: "1:353570405561:web:e2dd0fb27a5cff07926f68"
     };
 
-    // Firebase Başlatma
-    try {
-        firebase.initializeApp(firebaseConfig);
-    } catch (e) {
-        console.error("Firebase başlatma hatası:", e);
-    }
-    
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const FIXED_ADMIN = { email: "admin@test.com", pass: "1234" };
-    let sessionUser = sessionStorage.getItem("active_user_v25");
+    const DEFAULT_ADMIN = { email: "admin@test.com", pass: "1234" };
+    let currentUser = sessionStorage.getItem("v24_user");
 
-    function login() {
-        const mail = document.getElementById("authEmail").value;
+    async function login() {
+        const email = document.getElementById("authEmail").value;
         const pass = document.getElementById("authPass").value;
-        const err = document.getElementById("errorMsg");
-        
-        if(!mail || !pass) { alert("Doldurunuz!"); return; }
-
-        document.getElementById("loadingOverlay").style.display = "flex";
-        
-        // Veritabanına bağlanıp adminleri çekmeyi dene
-        db.ref('admins').once('value')
-        .then((snap) => {
+        db.ref('admins').once('value', (snap) => {
             let admins = snap.val() ? Object.values(snap.val()) : [];
-            admins.push(FIXED_ADMIN);
-
-            const found = admins.find(u => u.email === mail && u.pass === pass);
-            if(found) {
-                sessionStorage.setItem("active_user_v25", mail.replace(/\./g, '_'));
+            admins.push(DEFAULT_ADMIN);
+            let user = admins.find(a => a.email == email && a.pass == pass);
+            if(user) {
+                sessionStorage.setItem("v24_user", email.replace(/\./g, '_'));
                 location.reload();
-            } else {
-                err.innerText = "Hatalı e-posta veya şifre!";
-                err.style.display = "block";
-                document.getElementById("loadingOverlay").style.display = "none";
-            }
-        })
-        .catch((error) => {
-            console.error(error);
-            // Bağlantı hatası olsa bile sabit adminle girmeyi dene (GitHub Pages için bypass)
-            if(mail === FIXED_ADMIN.email && pass === FIXED_ADMIN.pass) {
-                sessionStorage.setItem("active_user_v25", mail.replace(/\./g, '_'));
-                location.reload();
-            } else {
-                err.innerText = "Veritabanı bağlantı hatası: " + error.message;
-                err.style.display = "block";
-                document.getElementById("loadingOverlay").style.display = "none";
-            }
+            } else alert("Hata!");
         });
     }
 
-    if(sessionUser) {
+    if(currentUser) {
         document.getElementById("loginPage").style.display = "none";
         document.getElementById("app").style.display = "block";
         document.getElementById("topNav").style.display = "flex";
-        if(sessionUser === "admin@test_com") document.getElementById("adminPanel").style.display = "block";
-        fetchData();
+        if(currentUser === "admin@test_com") {
+            document.getElementById("adminOnlyPanel").style.display = "block";
+            adminListesiniGetir();
+        }
+        verileriGetir();
     }
 
-    function savePersonel() {
-        const ad = document.getElementById("pAd").value;
-        const maas = document.getElementById("pMaas").value;
-        if(!ad || !maas) return;
-        db.ref('personeller/' + sessionUser).push({
-            ad: ad, maas: +maas, 
-            mU: +document.getElementById("pMesai").value || 0,
-            kU: +document.getElementById("pKesinti").value || 0,
-            mesai: 0, avans: 0, dev: 0, net: +maas
-        });
-        alert("Kaydedildi!");
-    }
-
-    function fetchData() {
-        db.ref('personeller/' + sessionUser).on('value', (snap) => {
+    function adminListesiniGetir() {
+        db.ref('admins').on('value', (snap) => {
+            const container = document.getElementById("adminListBody");
+            container.innerHTML = "";
             const data = snap.val();
-            const list = document.getElementById("liste");
-            const sel = document.getElementById("pSelect");
-            list.innerHTML = "";
-            sel.innerHTML = '<option value="">Seçiniz...</option>';
-            if(!data) return;
-            Object.keys(data).forEach(id => {
-                const p = data[id];
-                sel.innerHTML += `<option value="${id}">${p.ad}</option>`;
-                list.innerHTML += `<tr>
-                    <td>${p.ad}</td><td>${p.maas}₺</td><td>${p.mesai}₺</td><td>${p.avans+p.dev}₺</td><td><b>${p.net}₺</b></td>
-                    <td><button onclick="sil('${id}')" style="background:red; color:white;">X</button></td>
-                </tr>`;
-            });
+            if(data) {
+                Object.keys(data).forEach(key => {
+                    container.innerHTML += `
+                        <div class="admin-item">
+                            <span style="font-size:13px;">${data[key].email}</span>
+                            <button class="btn-mini-danger" onclick="adminSil('${key}')">Sil</button>
+                        </div>`;
+                });
+            }
         });
     }
 
-    function runProcess() {
-        const id = document.getElementById("pSelect").value;
-        const miktar = +document.getElementById("iMiktar").value;
-        const tip = document.getElementById("iTip").value;
-        if(!id || !miktar) return;
+    function adminSil(key) { if(confirm("Silinsin mi?")) db.ref('admins/' + key).remove(); }
 
-        db.ref('personeller/' + sessionUser + '/' + id).once('value', (snap) => {
+    function personelEkle() {
+        if(!pAd.value || !pMaas.value) return;
+        db.ref('personeller/' + currentUser).push({
+            ad: pAd.value, maas: +pMaas.value, mUcret: +pMesaiUcret.value,
+            devGunluk: +pDevGunluk.value, mesai: 0, avans: 0, dev: 0, net: +pMaas.value
+        });
+        ["pAd", "pMaas", "pMesaiUcret", "pDevGunluk"].forEach(id => document.getElementById(id).value = "");
+    }
+
+    function islemYap() {
+        const pid = pSelect.value;
+        const miktar = +islemMiktar.value;
+        if(!pid || !miktar) return;
+        db.ref('personeller/' + currentUser + '/' + pid).once('value', (snap) => {
             let p = snap.val();
-            if(tip === "mesai") p.mesai += (miktar * p.mU);
-            else if(tip === "avans") p.avans += miktar;
-            else if(tip === "dev") p.dev += (miktar * p.kU);
+            const tip = islemTip.value;
+            if(tip == "mesai") p.mesai += (miktar * (p.mUcret || 0));
+            else if(tip == "avans") p.avans += miktar;
+            else if(tip == "dev_gun") p.dev += (miktar * (p.devGunluk || 0));
             p.net = p.maas + p.mesai - (p.avans + p.dev);
-            db.ref('personeller/' + sessionUser + '/' + id).set(p);
-            document.getElementById("iMiktar").value = "";
+            db.ref('personeller/' + currentUser + '/' + pid).set(p);
+            islemMiktar.value = "";
         });
     }
 
-    function sil(id) { if(confirm("Silinsin mi?")) db.ref('personeller/' + sessionUser + '/' + id).remove(); }
+    function verileriGetir() {
+        db.ref('personeller/' + currentUser).on('value', (snap) => {
+            const data = snap.val();
+            liste.innerHTML = "";
+            pSelect.innerHTML = '<option value="">Seç...</option>';
+            if(data) {
+                Object.keys(data).forEach(id => {
+                    let p = data[id];
+                    pSelect.innerHTML += `<option value="${id}">${p.ad}</option>`;
+                    liste.innerHTML += `<tr>
+                        <td><b>${p.ad}</b></td><td>${p.maas}₺</td><td>${p.mesai}₺</td><td>${p.avans+p.dev}₺</td><td><b>${p.net}₺</b></td>
+                        <td><button class="btn-mini-danger" onclick="sil('${id}')">X</button></td></tr>`;
+                });
+            }
+        });
+    }
+
+    function sil(id) { if(confirm("Sil?")) db.ref('personeller/' + currentUser + '/' + id).remove(); }
     function logout() { sessionStorage.clear(); location.reload(); }
-    function addNewUser() {
-        db.ref('admins').push({ email: document.getElementById("newEmail").value, pass: document.getElementById("newPass").value });
-        alert("Başarılı!");
+
+    function exportToExcel() {
+        db.ref('personeller/' + currentUser).once('value', (snap) => {
+            let data = snap.val();
+            if(!data) return;
+            let csv = "\ufeffAd Soyad;Maas;Mesai;Avans;Kesinti;Net\n";
+            Object.values(data).forEach(p => csv += `${p.ad};${p.maas};${p.mesai};${p.avans};${p.dev};${p.net}\n`);
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'}));
+            a.download = "Rapor.csv"; a.click();
+        });
+    }
+
+    function fullDatabaseBackup() {
+        db.ref('/').once('value', (snap) => {
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(new Blob([JSON.stringify(snap.val(), null, 2)], {type: 'application/json'}));
+            a.download = "Yedek.json"; a.click();
+        });
+    }
+
+    function addNewAdmin() {
+        const m = document.getElementById("newAdminEmail").value;
+        const s = document.getElementById("newAdminPass").value;
+        if(m && s) db.ref('admins').push({ email: m, pass: s });
     }
 </script>
 </body>
 </html>
-
