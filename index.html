@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Personel Takip - E-Tablo Sistem</title>
+    <title>Personel Takip - Gelişmiş Raporlama</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -14,9 +14,9 @@
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); color: #333; }
         header { background: var(--primary); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .menu-btn { font-size: 24px; cursor: pointer; background: none; border: none; color: white; }
-        .dropdown-content { display: none; position: absolute; top: 55px; right: 15px; background-color: white; min-width: 200px; border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); z-index: 1001; }
-        .dropdown-content button { width: 100%; padding: 12px 16px; border: none; background: none; text-align: left; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px; }
-        .dropdown-content button:hover { background: #f9f9f9; }
+        .dropdown-content { display: none; position: absolute; top: 55px; right: 15px; background-color: white; min-width: 220px; border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); z-index: 1001; overflow: hidden; }
+        .dropdown-content button { width: 100%; padding: 12px 16px; border: none; background: none; text-align: left; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px; transition: 0.2s; }
+        .dropdown-content button:hover { background: #f1f1f1; }
         .container { padding: 15px; max-width: 1200px; margin: auto; }
         .panel { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .panel h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary); border-left: 4px solid var(--accent); padding-left: 10px; }
@@ -29,58 +29,84 @@
         .btn-mini-detail { background: var(--warning); color: white; padding: 6px 10px; font-size: 11px; margin-right: 5px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
-        .modal-content { background: white; margin: 5% auto; padding: 25px; border-radius: 15px; width: 90%; max-width: 500px; position: relative; }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); overflow-y: auto; }
+        .modal-content { background: white; margin: 5% auto; padding: 25px; border-radius: 15px; width: 95%; max-width: 800px; position: relative; }
         .detay-satir { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #eee; align-items: center; }
-        .detay-satir.toplam { border-top: 2px solid #333; font-weight: bold; font-size: 1.1em; margin-top: 10px; }
+        .detay-satir.toplam { border-top: 2px solid #333; font-weight: bold; font-size: 1.1em; margin-top: 10px; padding-top: 15px; }
+        .gecmis-liste { max-height: 200px; overflow-y: auto; background: #f9f9f9; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 13px; }
+        .rapor-secici { background: #f0f4f8; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        @media print { .btn-main, .menu-btn, .dropdown-content, .rapor-secici { display: none !important; } }
     </style>
 </head>
 <body>
 
 <header>
-    <div>🌍 Personel Takip</div>
+    <div>🌍 Personel Takip Sistemi</div>
     <div id="navContainer" style="display:none; position:relative;">
         <button class="menu-btn" onclick="toggleMenu('myDropdown')">☰</button>
         <div id="myDropdown" class="dropdown-content">
             <button id="userMgmtBtn" style="display:none;" onclick="openUserModal()">👥 Kullanıcı Yönetimi</button>
-            <button onclick="exportToSheet()">📊 E-Tablo Olarak İndir</button>
-            <button onclick="fullDatabaseBackup()">💾 Yedek Al</button>
+            <button onclick="openReportModal()">📋 Aylık Genel Rapor</button>
+            <button onclick="exportToSheet()">📊 E-Tablo (Excel) İndir</button>
+            <button onclick="fullDatabaseBackup()">💾 Sistem Yedeği Al</button>
             <button onclick="document.getElementById('importFile').click()">📤 Yedek Yükle</button>
-            <button onclick="logout()">🔌 Güvenli Çıkış</button>
+            <button onclick="logout()" style="color:var(--danger)">🔌 Güvenli Çıkış</button>
         </div>
     </div>
 </header>
 
 <input type="file" id="importFile" style="display:none" accept=".json" onchange="restoreBackup(event)">
 
+<div id="reportModal" class="modal">
+    <div class="modal-content">
+        <span style="position:absolute; right:20px; top:15px; cursor:pointer; font-size:24px;" onclick="closeModal('reportModal')">×</span>
+        <h3 id="raporBaslik">Aylık Rapor</h3>
+        
+        <div class="rapor-secici">
+            <span>📅 Dönem Seçin:</span>
+            <input type="month" id="raporAySecici" onchange="generateMonthlyReport()">
+        </div>
+
+        <div id="raporOzet" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 20px;"></div>
+        
+        <div style="overflow-x:auto;">
+            <table>
+                <thead><tr style="background:#f4f7f6;"><th>Personel</th><th>Sabit</th><th>Mesai(+)</th><th>Avans(-)</th><th>Kesinti(-)</th><th>Net</th></tr></thead>
+                <tbody id="raporTabloGovde"></tbody>
+            </table>
+        </div>
+        <button class="btn-main" style="width:100%; margin-top:20px;" onclick="window.print()">🖨️ Raporu Yazdır</button>
+    </div>
+</div>
+
 <div id="detailModal" class="modal">
     <div class="modal-content">
         <span style="position:absolute; right:20px; top:15px; cursor:pointer; font-size:24px;" onclick="closeModal('detailModal')">×</span>
-        <h3 id="detayBaslik" style="border-bottom: 2px solid var(--accent); padding-bottom: 10px;">Personel Detayı</h3>
+        <h3 id="detayBaslik">Personel Detayı</h3>
         <div id="detayIcerik"></div>
-        <button class="btn-main" style="width:100%; margin-top:20px;" onclick="window.print()">🖨️ Yazdır / PDF Yap</button>
+        <button class="btn-main" style="width:100%; margin-top:20px;" onclick="window.print()">🖨️ Yazdır / PDF Kaydet</button>
     </div>
 </div>
 
 <div id="userModal" class="modal">
     <div class="modal-content">
         <span style="position:absolute; right:20px; top:15px; cursor:pointer; font-size:24px;" onclick="closeModal('userModal')">×</span>
-        <h3 style="border-bottom: 2px solid var(--accent); padding-bottom: 10px;">Kullanıcı Yönetimi</h3>
+        <h3>Kullanıcı Yönetimi</h3>
         <div style="background: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-            <input id="newAdminEmail" type="email" placeholder="E-posta" style="width:100%; margin-bottom:10px;">
-            <input id="newAdminPass" type="text" placeholder="Şifre" style="width:100%; margin-bottom:10px;">
-            <button class="btn-success" onclick="addAdmin()">Yeni Kullanıcı Ekle</button>
+            <input id="newAdminEmail" type="email" placeholder="E-posta">
+            <input id="newAdminPass" type="text" placeholder="Şifre" style="margin: 10px 0;">
+            <button class="btn-success" onclick="addAdmin()">Kullanıcıyı Yetkilendir</button>
         </div>
-        <div id="adminListContainer" style="max-height: 250px; overflow-y: auto;"></div>
+        <div id="adminListContainer"></div>
     </div>
 </div>
 
 <div class="container">
     <div id="loginPage" style="text-align:center; padding: 50px 20px; background: white; border-radius: 15px; margin-top: 50px;">
-        <h2>Sisteme Giriş</h2>
-        <input id="authEmail" type="email" placeholder="E-posta" style="width:100%; max-width:300px; margin-bottom:10px;"><br>
-        <input id="authPass" type="password" placeholder="Şifre" style="width:100%; max-width:300px; margin-bottom:10px;"><br>
-        <button class="btn-main" style="width:100%; max-width:300px;" onclick="login()">Giriş Yap</button>
+        <h2>Giriş Yap</h2>
+        <input id="authEmail" type="email" placeholder="E-posta" style="max-width:300px;"><br><br>
+        <input id="authPass" type="password" placeholder="Şifre" style="max-width:300px;"><br><br>
+        <button class="btn-main" style="width:100%; max-width:300px;" onclick="login()">Sisteme Eriş</button>
     </div>
 
     <div id="app" style="display:none">
@@ -88,30 +114,30 @@
             <h4>➕ Yeni Personel Kaydı</h4>
             <div class="form-row">
                 <input id="pAd" placeholder="Ad Soyad">
-                <input id="pMaas" type="number" placeholder="Sabit Maaş ₺">
+                <input id="pMaas" type="number" placeholder="Sabit Maaş">
                 <select id="pMaasTip">
-                    <option value="">Çalışma Şekli Seç...</option>
+                    <option value="">Çalışma Şekli...</option>
                     <option value="Aylık">Aylık</option>
                     <option value="15 Günlük">15 Günlük</option>
                     <option value="Haftalık">Haftalık</option>
                 </select>
-                <input id="pMesaiUcret" type="number" placeholder="Saatlik Mesai ₺">
-                <input id="pDevGunluk" type="number" placeholder="Günlük Kesinti ₺">
-                <button class="btn-success" onclick="personelEkle()">Personeli Kaydet</button>
+                <input id="pMesaiUcret" type="number" placeholder="Saatlik Mesai">
+                <input id="pDevGunluk" type="number" placeholder="Günlük Kesinti">
+                <button class="btn-success" onclick="personelEkle()">Kaydet</button>
             </div>
         </div>
 
         <div class="panel">
-            <h4>💰 Maaş & İşlemler</h4>
+            <h4>💰 İşlem Uygula</h4>
             <div class="form-row">
-                <select id="pSelect"><option value="">Personel Seçiniz...</option></select>
+                <select id="pSelect"><option value="">Personel Seç...</option></select>
                 <select id="islemTip">
-                    <option value="mesai">Mesai (Saat Ekle)</option>
-                    <option value="avans">Avans (Para Ver)</option>
-                    <option value="dev">Devamsızlık (Gün Kes)</option>
+                    <option value="mesai">Mesai (Saat)</option>
+                    <option value="avans">Avans (Para)</option>
+                    <option value="dev">Kesinti (Gün)</option>
                 </select>
                 <input id="islemMiktar" type="number" placeholder="Miktar">
-                <button class="btn-main" style="flex:1 1 100%" onclick="islemYap()">İşlemi Uygula</button>
+                <button class="btn-main" style="flex:1 1 100%" onclick="islemYap()">İşlemi Tamamla</button>
             </div>
         </div>
 
@@ -119,7 +145,7 @@
             <h4>📋 Personel Listesi</h4>
             <div style="overflow-x:auto">
                 <table>
-                    <thead><tr><th>Ad Soyad</th><th>Çalışma Şekli</th><th>Net Ödenecek</th><th>İşlem</th></tr></thead>
+                    <thead><tr><th>Ad Soyad</th><th>Tip</th><th>Net Ödenecek</th><th>Yönet</th></tr></thead>
                     <tbody id="liste"></tbody>
                 </table>
             </div>
@@ -128,6 +154,7 @@
 </div>
 
 <script>
+    // --- KONFİGÜRASYON ---
     const firebaseConfig = {
         apiKey: "AIzaSyC__15sb5F4OAMkWfrZIRXfJyGDCkehI84",
         authDomain: "personeltakip-7e75d.firebaseapp.com",
@@ -137,25 +164,22 @@
         messagingSenderId: "353570405561",
         appId: "1:353570405561:web:e2dd0fb27a5cff07926f68"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let currentUser = sessionStorage.getItem("v24_user");
 
-    // Giriş Kontrolü
+    const formatPara = (n) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(n || 0);
+    const sayiyaCevir = (v) => parseFloat(String(v).replace(',', '.')) || 0;
+
     if(currentUser) {
         document.getElementById("loginPage").style.display = "none";
         document.getElementById("app").style.display = "block";
         document.getElementById("navContainer").style.display = "block";
-        
-        // Süper Admin Kısıtlaması
-        if (currentUser === "admin@test_com") {
-            document.getElementById("userMgmtBtn").style.display = "block";
-        }
-        
+        if (currentUser === "admin@test_com") document.getElementById("userMgmtBtn").style.display = "block";
         loadData();
     }
 
+    // --- TEMEL FONKSİYONLAR ---
     function login() {
         const email = document.getElementById("authEmail").value.trim().toLowerCase();
         const pass = document.getElementById("authPass").value;
@@ -167,72 +191,8 @@
         });
     }
     function saveSession(e) { sessionStorage.setItem("v24_user", e.replace(/\./g, '_')); location.reload(); }
+    function logout() { sessionStorage.clear(); location.reload(); }
 
-    // Kullanıcı Yönetimi
-    function openUserModal() { document.getElementById("userModal").style.display = "block"; loadAdmins(); }
-    function addAdmin() {
-        const email = document.getElementById("newAdminEmail").value.trim().toLowerCase();
-        const pass = document.getElementById("newAdminPass").value.trim();
-        if(!email || !pass) return alert("Eksik bilgi!");
-        db.ref('admins').push({ email, pass }).then(() => {
-            alert("Kullanıcı eklendi.");
-            document.getElementById("newAdminEmail").value = "";
-            document.getElementById("newAdminPass").value = "";
-        });
-    }
-    function loadAdmins() {
-        db.ref('admins').on('value', snap => {
-            const container = document.getElementById("adminListContainer");
-            container.innerHTML = "";
-            const data = snap.val();
-            if(data) Object.keys(data).forEach(id => {
-                container.innerHTML += `<div class="detay-satir"><span>${data[id].email}</span><button class="btn-mini-danger" onclick="deleteAdmin('${id}')">Sil</button></div>`;
-            });
-        });
-    }
-    function deleteAdmin(id) { if(confirm("Kullanıcı silinsin mi?")) db.ref('admins/' + id).remove(); }
-
-    // Personel İşlemleri
-    function personelEkle() {
-    const ad = document.getElementById("pAd").value.trim();
-    const maas = parseFloat(document.getElementById("pMaas").value);
-    const tip = document.getElementById("pMaasTip").value;
-    
-    if(!ad || isNaN(maas) || !tip) return alert("Eksik bilgi! Lütfen tüm alanları doldurun.");
-
-    // --- AYNI İSİM KONTROLÜ BAŞLANGICI ---
-    db.ref('personeller/' + currentUser).once('value', snap => {
-        const mevcutVeriler = snap.val();
-        let isimVarMi = false;
-
-        if (mevcutVeriler) {
-            // Tüm kayıtları dön ve ismi kontrol et (Küçük/Büyük harf duyarsız)
-            Object.values(mevcutVeriler).forEach(p => {
-                if (p.ad.toLowerCase() === ad.toLowerCase()) {
-                    isimVarMi = true;
-                }
-            });
-        }
-
-        if (isimVarMi) {
-            alert("Hata: '" + ad + "' isminde bir personel zaten kayıtlı!");
-            return; // Fonksiyondan çık, kaydetme.
-        }
-        // --- AYNI İSİM KONTROLÜ BİTİŞİ ---
-
-        // İsim yoksa kayda devam et
-        db.ref('personeller/' + currentUser).push({
-            ad, maas, pMaasTip: tip,
-            pMesaiUcret: parseFloat(document.getElementById("pMesaiUcret").value) || 0,
-            pDevGunluk: parseFloat(document.getElementById("pDevGunluk").value) || 0,
-            mesaiVal: 0, avansVal: 0, devVal: 0, mesaiSaat: 0, devGun: 0, net: maas
-        }).then(() => {
-            alert("Personel başarıyla kaydedildi.");
-            ["pAd","pMaas","pMesaiUcret","pDevGunluk"].forEach(id => document.getElementById(id).value = "");
-            document.getElementById("pMaasTip").value = "";
-        });
-    });
-}
     function loadData() {
         db.ref('personeller/' + currentUser).on('value', snap => {
             const data = snap.val();
@@ -242,153 +202,176 @@
             if(data) Object.keys(data).forEach(id => {
                 const p = data[id];
                 select.innerHTML += `<option value="${id}">${p.ad}</option>`;
-                liste.innerHTML += `<tr><td><b>${p.ad}</b></td><td>${p.pMaasTip}</td><td style="color:var(--success); font-weight:bold;">${p.net.toFixed(2)} ₺</td><td><button class="btn-mini-detail" onclick="detay('${id}')">Detay</button><button class="btn-mini-danger" onclick="sil('${id}')">Sil</button></td></tr>`;
+                liste.innerHTML += `<tr><td><b>${p.ad}</b></td><td>${p.pMaasTip}</td><td style="color:var(--success); font-weight:bold;">${formatPara(p.net)}</td><td><button class="btn-mini-detail" onclick="detay('${id}')">Detay</button><button class="btn-mini-danger" onclick="sil('${id}')">Sil</button></td></tr>`;
             });
         });
     }
 
+    function personelEkle() {
+        const ad = document.getElementById("pAd").value.trim();
+        const maas = sayiyaCevir(document.getElementById("pMaas").value);
+        const tip = document.getElementById("pMaasTip").value;
+        if(!ad || maas <= 0 || !tip) return alert("Eksik bilgi!");
+        db.ref('personeller/' + currentUser).push({
+            ad, maas, pMaasTip: tip,
+            pMesaiUcret: sayiyaCevir(document.getElementById("pMesaiUcret").value),
+            pDevGunluk: sayiyaCevir(document.getElementById("pDevGunluk").value),
+            mesaiVal: 0, avansVal: 0, devVal: 0, mesaiSaat: 0, devGun: 0, net: maas, gecmis: []
+        }).then(() => { location.reload(); });
+    }
+
     function islemYap() {
-    const id = document.getElementById("pSelect").value;
-    const miktar = parseFloat(document.getElementById("islemMiktar").value);
-    const tip = document.getElementById("islemTip").value;
-    if(!id || isNaN(miktar)) return alert("Lütfen personel ve miktar seçiniz!");
-    
-    db.ref('personeller/' + currentUser + '/' + id).once('value', snap => {
-        let p = snap.val();
-        const tarih = new Date().toLocaleString('tr-TR'); // İşlem tarihi
-        
-        // Geçmiş listesi yoksa oluştur
-        if(!p.gecmis) p.gecmis = [];
-
-        let islemAciklama = "";
-        if(tip === "mesai") { 
-            p.mesaiSaat = (p.mesaiSaat || 0) + miktar; 
-            const tutar = miktar * (p.pMesaiUcret || 0);
-            p.mesaiVal = (p.mesaiVal || 0) + tutar; 
-            islemAciklama = `+${miktar} Saat Mesai (${tutar.toFixed(2)} ₺)`;
-        }
-        else if(tip === "avans") { 
-            p.avansVal = (p.avansVal || 0) + miktar; 
-            islemAciklama = `-${miktar.toFixed(2)} ₺ Avans Ödemesi`;
-        }
-        else if(tip === "dev") { 
-            p.devGun = (p.devGun || 0) + miktar; 
-            const tutar = miktar * (p.pDevGunluk || 0);
-            p.devVal = (p.devVal || 0) + tutar; 
-            islemAciklama = `-${miktar} Gün Kesinti (${tutar.toFixed(2)} ₺)`;
-        }
-        
-        // İşlemi geçmişe ekle
-        p.gecmis.push({ tarih, aciklama: islemAciklama, tip });
-        
-        p.net = p.maas + (p.mesaiVal || 0) - ((p.avansVal || 0) + (p.devVal || 0));
-        
-        db.ref('personeller/' + currentUser + '/' + id).set(p).then(() => { 
-            document.getElementById("islemMiktar").value = "";
-            alert("İşlem kaydedildi ve geçmişe eklendi.");
+        const id = document.getElementById("pSelect").value;
+        const miktar = sayiyaCevir(document.getElementById("islemMiktar").value);
+        const tip = document.getElementById("islemTip").value;
+        if(!id || miktar <= 0) return;
+        db.ref('personeller/' + currentUser + '/' + id).once('value', snap => {
+            let p = snap.val();
+            const tarihObj = new Date();
+            const tarihStr = tarihObj.toLocaleString('tr-TR');
+            const ayYilKey = tarihObj.getFullYear() + "-" + String(tarihObj.getMonth() + 1).padStart(2, '0');
+            
+            if(!p.gecmis) p.gecmis = [];
+            let desc = "";
+            let tutar = 0;
+            
+            if(tip === "mesai") {
+                tutar = miktar * (p.pMesaiUcret || 0);
+                p.mesaiSaat = (p.mesaiSaat || 0) + miktar;
+                p.mesaiVal = (p.mesaiVal || 0) + tutar;
+                desc = `+${miktar} Saat Mesai (${formatPara(tutar)})`;
+            } else if(tip === "avans") {
+                tutar = miktar;
+                p.avansVal = (p.avansVal || 0) + miktar;
+                desc = `-${formatPara(miktar)} Avans`;
+            } else if(tip === "dev") {
+                tutar = miktar * (p.pDevGunluk || 0);
+                p.devGun = (p.devGun || 0) + miktar;
+                p.devVal = (p.devVal || 0) + tutar;
+                desc = `-${miktar} Gün Kesinti (${formatPara(tutar)})`;
+            }
+            
+            p.gecmis.push({ tarih: tarihStr, ayYil: ayYilKey, desc, tip, tutar, miktar });
+            p.net = p.maas + (p.mesaiVal || 0) - (p.avansVal || 0) - (p.devVal || 0);
+            db.ref('personeller/' + currentUser + '/' + id).set(p).then(() => { document.getElementById("islemMiktar").value = ""; });
         });
-    });
-}
-    function detay(id) {
-    db.ref('personeller/' + currentUser + '/' + id).once('value', snap => {
-        const p = snap.val();
-        document.getElementById("detayBaslik").innerText = p.ad + " - Personel Kartı";
-        
-        // İşlem Geçmişi Tablosunu Oluştur
-        let gecmisHtml = `<div style="margin-top:20px;"><strong>📜 İşlem Geçmişi:</strong></div>
-                         <div style="font-size:12px; margin-top:10px; max-height:150px; overflow-y:auto; background:#f9f9f9; padding:10px; border-radius:8px;">`;
-        
-        if(p.gecmis && p.gecmis.length > 0) {
-            p.gecmis.reverse().forEach(g => { // Son işlemleri en üstte göster
-                const renk = g.tip === 'mesai' ? 'green' : 'red';
-                gecmisHtml += `<div style="border-bottom:1px solid #eee; padding:5px 0;">
-                                <small style="color:#888">${g.tarih}</small><br>
-                                <b style="color:${renk}">${g.aciklama}</b>
-                               </div>`;
+    }
+
+    // --- RAPORLAMA FONKSİYONLARI ---
+    function openReportModal() {
+        const simdi = new Date();
+        const formatliAy = simdi.getFullYear() + "-" + String(simdi.getMonth() + 1).padStart(2, '0');
+        document.getElementById("raporAySecici").value = formatliAy;
+        generateMonthlyReport();
+        document.getElementById("reportModal").style.display = "block";
+    }
+
+    function generateMonthlyReport() {
+        const secilenAy = document.getElementById("raporAySecici").value; // Format: "2024-03"
+        if(!secilenAy) return;
+
+        db.ref('personeller/' + currentUser).once('value', snap => {
+            const data = snap.val();
+            const govde = document.getElementById("raporTabloGovde");
+            govde.innerHTML = "";
+            let tS = 0, tM = 0, tA = 0, tK = 0, gT = 0;
+
+            if(data) Object.values(data).forEach(p => {
+                let pMesai = 0, pAvans = 0, pKesinti = 0;
+
+                // Geçmiş işlemlerden sadece seçilen aya ait olanları filtrele
+                if(p.gecmis) {
+                    p.gecmis.forEach(g => {
+                        if(g.ayYil === secilenAy) {
+                            if(g.tip === "mesai") pMesai += g.tutar;
+                            else if(g.tip === "avans") pAvans += g.tutar;
+                            else if(g.tip === "dev") pKesinti += g.tutar;
+                        }
+                    });
+                }
+
+                const pNet = p.maas + pMesai - pAvans - pKesinti;
+                tS += p.maas; tM += pMesai; tA += pAvans; tK += pKesinti; gT += pNet;
+
+                govde.innerHTML += `<tr>
+                    <td><b>${p.ad}</b></td>
+                    <td>${formatPara(p.maas)}</td>
+                    <td style="color:green">+${formatPara(pMesai)}</td>
+                    <td style="color:red">-${formatPara(pAvans)}</td>
+                    <td style="color:red">-${formatPara(pKesinti)}</td>
+                    <td><b>${formatPara(pNet)}</b></td>
+                </tr>`;
             });
-        } else {
-            gecmisHtml += `<div style="color:#aaa; text-align:center;">Henüz bir işlem kaydı yok.</div>`;
-        }
-        gecmisHtml += `</div>`;
 
-        document.getElementById("detayIcerik").innerHTML = `
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px; background:var(--bg); padding:10px; border-radius:8px;">
-                <span><strong>Maaş Tipi:</strong> ${p.pMaasTip}</span>
-                <span><strong>Birim Mesai:</strong> ${p.pMesaiUcret}₺/Saat</span>
-            </div>
-            <div class="detay-satir"><span>Sabit Maaş:</span> <span>${p.maas.toFixed(2)} ₺</span></div>
-            <div class="detay-satir" style="color:green"><span>Toplam Mesai (${p.mesaiSaat || 0} Saat):</span> <span>+${(p.mesaiVal || 0).toFixed(2)} ₺</span></div>
-            <div class="detay-satir" style="color:red"><span>Toplam Avanslar:</span> <span>-${(p.avansVal || 0).toFixed(2)} ₺</span></div>
-            <div class="detay-satir" style="color:red"><span>Toplam Kesinti (${p.devGun || 0} Gün):</span> <span>-${(p.devVal || 0).toFixed(2)} ₺</span></div>
-            <div class="detay-satir toplam"><span>NET ÖDENECEK:</span> <span style="color:var(--success)">${p.net.toFixed(2)} ₺</span></div>
-            ${gecmisHtml}
-        `;
-        document.getElementById("detailModal").style.display = "block";
-    });
-}
-
-   function exportToSheet() {
-    db.ref('personeller/' + currentUser).once('value', snap => {
-        const data = snap.val(); 
-        if(!data) return alert("Dışa aktarılacak veri bulunamadı!");
-
-        // 1. HTML ve CSS (Görünümü tabloyla sınırlar)
-        let tableHtml = `
-            <meta charset="utf-8">
-            <style>
-                table { border-collapse: collapse; width: auto; }
-                th { background-color: #2c3e50; color: white; padding: 10px; border: 1px solid #000; }
-                td { padding: 8px; border: 1px solid #ccc; text-align: left; }
-                .net-cell { font-weight: bold; color: green; }
-            </style>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Ad Soyad</th>
-                        <th>Çalışma Şekli</th>
-                        <th>Sabit Maaş (₺)</th>
-                        <th>Mesai (Saat)</th>
-                        <th>Mesai Tutarı (₺)</th>
-                        <th>Avans (₺)</th>
-                        <th>Kesinti (Gün)</th>
-                        <th>Kesinti Tutarı (₺)</th>
-                        <th>Net Ödenecek (₺)</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        // 2. Verileri Satır Satır Ekleme
-        Object.values(data).forEach(p => {
-            tableHtml += `
-                <tr>
-                    <td>${p.ad || '-'}</td>
-                    <td>${p.pMaasTip || '-'}</td>
-                    <td>${(p.maas || 0).toFixed(2)}</td>
-                    <td>${p.mesaiSaat || 0}</td>
-                    <td>${(p.mesaiVal || 0).toFixed(2)}</td>
-                    <td>${(p.avansVal || 0).toFixed(2)}</td>
-                    <td>${p.devGun || 0}</td>
-                    <td>${(p.devVal || 0).toFixed(2)}</td>
-                    <td class="net-cell">${(p.net || 0).toFixed(2)}</td>
-                </tr>
-            `;
+            document.getElementById("raporOzet").innerHTML = `
+                <div style="background:#fff; border:1px solid #ddd; padding:10px; border-radius:8px;">Sabit: ${formatPara(tS)}</div>
+                <div style="background:#eafaf1; padding:10px; border-radius:8px; color:green;">Toplam Mesai: ${formatPara(tM)}</div>
+                <div style="background:#fdedec; padding:10px; border-radius:8px; color:red;">Top. Kesinti: ${formatPara(tA+tK)}</div>
+                <div style="background:var(--primary); color:white; padding:10px; border-radius:8px;">GENEL TOPLAM: ${formatPara(gT)}</div>`;
+            
+            const ayIsmi = new Date(secilenAy).toLocaleString('tr-TR', {month:'long', year:'numeric'});
+            document.getElementById("raporBaslik").innerText = ayIsmi + " Maaş Raporu";
         });
+    }
 
-        tableHtml += `</tbody></table>`;
+    // --- DİĞER YARDIMCI FONKSİYONLAR ---
+    function detay(id) {
+        db.ref('personeller/' + currentUser + '/' + id).once('value', snap => {
+            const p = snap.val();
+            let gHtml = `<div class="gecmis-liste">`;
+            if(p.gecmis) [...p.gecmis].reverse().forEach(g => {
+                gHtml += `<div style="border-bottom:1px solid #ddd; padding:5px 0;"><small>${g.tarih}</small><br><b>${g.desc}</b></div>`;
+            });
+            gHtml += `</div>`;
+            document.getElementById("detayBaslik").innerText = p.ad;
+            document.getElementById("detayIcerik").innerHTML = `
+                <div class="detay-satir"><span>Sabit Maaş:</span> <span>${formatPara(p.maas)}</span></div>
+                <div class="detay-satir" style="color:green"><span>Toplam Mesai:</span> <span>+${formatPara(p.mesaiVal)}</span></div>
+                <div class="detay-satir" style="color:red"><span>Toplam Avans:</span> <span>-${formatPara(p.avansVal)}</span></div>
+                <div class="detay-satir" style="color:red"><span>Toplam Kesinti:</span> <span>-${formatPara(p.devVal)}</span></div>
+                <div class="detay-satir toplam"><span>GÜNCEL NET:</span> <span>${formatPara(p.net)}</span></div>
+                <h4 style="margin-top:20px;">📜 İşlem Geçmişi</h4>${gHtml}`;
+            document.getElementById("detailModal").style.display = "block";
+        });
+    }
 
-        // 3. Dosyayı Excel Formatında İndirme
-        const blob = new Blob([tableHtml], { type: 'application/vnd.ms-excel' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        const tarih = new Date().toLocaleDateString().replace(/\./g, '-');
-        
-        link.href = url;
-        link.download = `Personel_Bordro_Tablosu_${tarih}.xls`;
-        link.click();
-        URL.revokeObjectURL(url);
-    });
-}
+    function exportToSheet() {
+        db.ref('personeller/' + currentUser).once('value', snap => {
+            const data = snap.val(); if(!data) return;
+            let csv = "sep=;\r\nAd Soyad;Calisma Sekli;Sabit Maas;Net Odenecek\r\n";
+            Object.values(data).forEach(p => {
+                csv += `${p.ad};${p.pMaasTip};${p.maas.toFixed(2).replace('.',',')};${p.net.toFixed(2).replace('.',',')}\r\n`;
+            });
+            const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `Personel_Listesi.csv`;
+            link.click();
+        });
+    }
+
+    function toggleMenu(id) { const m = document.getElementById(id); m.style.display = m.style.display === "block" ? "none" : "block"; }
+    function closeModal(id) { document.getElementById(id).style.display = "none"; }
+    function sil(id) { if(confirm("Silmek istediğinize emin misiniz?")) db.ref('personeller/' + currentUser + '/' + id).remove(); }
+    
+    // Admin yönetimi (Aynı kalıyor)
+    function openUserModal() { document.getElementById("userModal").style.display = "block"; loadAdmins(); }
+    function loadAdmins() {
+        db.ref('admins').on('value', snap => {
+            const cont = document.getElementById("adminListContainer");
+            cont.innerHTML = "";
+            const data = snap.val();
+            if(data) Object.keys(data).forEach(id => {
+                cont.innerHTML += `<div class="detay-satir"><span>${data[id].email}</span><button class="btn-mini-danger" onclick="deleteAdmin('${id}')">Sil</button></div>`;
+            });
+        });
+    }
+    function addAdmin() {
+        const email = document.getElementById("newAdminEmail").value.trim().toLowerCase();
+        const pass = document.getElementById("newAdminPass").value.trim();
+        if(email && pass) db.ref('admins').push({ email, pass }).then(() => { alert("Eklendi"); });
+    }
+    function deleteAdmin(id) { if(confirm("Silinsin mi?")) db.ref('admins/' + id).remove(); }
     function fullDatabaseBackup() {
         db.ref('/').once('value', s => {
             const a = document.createElement("a");
@@ -396,30 +379,10 @@
             a.download = "Yedek.json"; a.click();
         });
     }
-
-    function restoreBackup(event) {
-        const file = event.target.files[0];
-        if(!file) return;
+    function restoreBackup(e) {
         const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const data = JSON.parse(e.target.result);
-                if(confirm("Tüm veriler silinsin mi?")) { db.ref('/').set(data).then(() => location.reload()); }
-            } catch(err) { alert("Dosya hatası!"); }
-        };
-        reader.readAsText(file);
-    }
-
-    function toggleMenu(id) { const m = document.getElementById(id); m.style.display = m.style.display === "block" ? "none" : "block"; }
-    function closeModal(id) { document.getElementById(id).style.display = "none"; }
-    function logout() { sessionStorage.clear(); location.reload(); }
-    function sil(id) { if(confirm("Silinsin mi?")) db.ref('personeller/' + currentUser + '/' + id).remove(); }
-    
-    window.onclick = function(event) {
-        if (!event.target.matches('.menu-btn')) {
-            const drops = document.getElementsByClassName("dropdown-content");
-            for (let i = 0; i < drops.length; i++) { if (drops[i].style.display === "block") drops[i].style.display = "none"; }
-        }
+        reader.onload = (ev) => { if(confirm("Emin misiniz?")) db.ref('/').set(JSON.parse(ev.target.result)).then(() => location.reload()); };
+        reader.readAsText(e.target.files[0]);
     }
 </script>
 </body>
