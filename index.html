@@ -15,7 +15,8 @@
         header { background: var(--primary); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .menu-btn { font-size: 24px; cursor: pointer; background: none; border: none; color: white; }
         .dropdown-content { display: none; position: absolute; top: 55px; right: 15px; background-color: white; min-width: 200px; border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); z-index: 1001; }
-        .dropdown-content button { width: 100%; padding: 12px 16px; border: none; background: none; text-align: left; cursor: pointer; border-bottom: 1px solid #eee; }
+        .dropdown-content button { width: 100%; padding: 12px 16px; border: none; background: none; text-align: left; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px; }
+        .dropdown-content button:hover { background: #f9f9f9; }
         .container { padding: 15px; max-width: 1200px; margin: auto; }
         .panel { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .panel h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary); border-left: 4px solid var(--accent); padding-left: 10px; }
@@ -30,7 +31,7 @@
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
         .modal-content { background: white; margin: 5% auto; padding: 25px; border-radius: 15px; width: 90%; max-width: 500px; position: relative; }
-        .detay-satir { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #eee; }
+        .detay-satir { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #eee; align-items: center; }
         .detay-satir.toplam { border-top: 2px solid #333; font-weight: bold; font-size: 1.1em; margin-top: 10px; }
     </style>
 </head>
@@ -41,6 +42,7 @@
     <div id="navContainer" style="display:none; position:relative;">
         <button class="menu-btn" onclick="toggleMenu('myDropdown')">☰</button>
         <div id="myDropdown" class="dropdown-content">
+            <button id="userMgmtBtn" style="display:none;" onclick="openUserModal()">👥 Kullanıcı Yönetimi</button>
             <button onclick="exportToSheet()">📊 E-Tablo Olarak İndir</button>
             <button onclick="fullDatabaseBackup()">💾 Yedek Al</button>
             <button onclick="document.getElementById('importFile').click()">📤 Yedek Yükle</button>
@@ -53,10 +55,23 @@
 
 <div id="detailModal" class="modal">
     <div class="modal-content">
-        <span style="position:absolute; right:20px; top:15px; cursor:pointer; font-size:24px;" onclick="closeModal()">×</span>
+        <span style="position:absolute; right:20px; top:15px; cursor:pointer; font-size:24px;" onclick="closeModal('detailModal')">×</span>
         <h3 id="detayBaslik" style="border-bottom: 2px solid var(--accent); padding-bottom: 10px;">Personel Detayı</h3>
         <div id="detayIcerik"></div>
         <button class="btn-main" style="width:100%; margin-top:20px;" onclick="window.print()">🖨️ Yazdır / PDF Yap</button>
+    </div>
+</div>
+
+<div id="userModal" class="modal">
+    <div class="modal-content">
+        <span style="position:absolute; right:20px; top:15px; cursor:pointer; font-size:24px;" onclick="closeModal('userModal')">×</span>
+        <h3 style="border-bottom: 2px solid var(--accent); padding-bottom: 10px;">Kullanıcı Yönetimi</h3>
+        <div style="background: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+            <input id="newAdminEmail" type="email" placeholder="E-posta" style="width:100%; margin-bottom:10px;">
+            <input id="newAdminPass" type="text" placeholder="Şifre" style="width:100%; margin-bottom:10px;">
+            <button class="btn-success" onclick="addAdmin()">Yeni Kullanıcı Ekle</button>
+        </div>
+        <div id="adminListContainer" style="max-height: 250px; overflow-y: auto;"></div>
     </div>
 </div>
 
@@ -127,6 +142,20 @@
     const db = firebase.database();
     let currentUser = sessionStorage.getItem("v24_user");
 
+    // Giriş Kontrolü
+    if(currentUser) {
+        document.getElementById("loginPage").style.display = "none";
+        document.getElementById("app").style.display = "block";
+        document.getElementById("navContainer").style.display = "block";
+        
+        // Süper Admin Kısıtlaması
+        if (currentUser === "admin@test_com") {
+            document.getElementById("userMgmtBtn").style.display = "block";
+        }
+        
+        loadData();
+    }
+
     function login() {
         const email = document.getElementById("authEmail").value.trim().toLowerCase();
         const pass = document.getElementById("authPass").value;
@@ -134,36 +163,76 @@
         db.ref('admins').once('value', snap => {
             let found = false;
             if(snap.val()) Object.values(snap.val()).forEach(a => { if(a.email === email && a.pass === pass) found = true; });
-            if(found) saveSession(email); else alert("Hata!");
+            if(found) saveSession(email); else alert("Hatalı giriş!");
         });
     }
     function saveSession(e) { sessionStorage.setItem("v24_user", e.replace(/\./g, '_')); location.reload(); }
 
-    if(currentUser) {
-        document.getElementById("loginPage").style.display = "none";
-        document.getElementById("app").style.display = "block";
-        document.getElementById("navContainer").style.display = "block";
-        loadData();
+    // Kullanıcı Yönetimi
+    function openUserModal() { document.getElementById("userModal").style.display = "block"; loadAdmins(); }
+    function addAdmin() {
+        const email = document.getElementById("newAdminEmail").value.trim().toLowerCase();
+        const pass = document.getElementById("newAdminPass").value.trim();
+        if(!email || !pass) return alert("Eksik bilgi!");
+        db.ref('admins').push({ email, pass }).then(() => {
+            alert("Kullanıcı eklendi.");
+            document.getElementById("newAdminEmail").value = "";
+            document.getElementById("newAdminPass").value = "";
+        });
     }
+    function loadAdmins() {
+        db.ref('admins').on('value', snap => {
+            const container = document.getElementById("adminListContainer");
+            container.innerHTML = "";
+            const data = snap.val();
+            if(data) Object.keys(data).forEach(id => {
+                container.innerHTML += `<div class="detay-satir"><span>${data[id].email}</span><button class="btn-mini-danger" onclick="deleteAdmin('${id}')">Sil</button></div>`;
+            });
+        });
+    }
+    function deleteAdmin(id) { if(confirm("Kullanıcı silinsin mi?")) db.ref('admins/' + id).remove(); }
 
+    // Personel İşlemleri
     function personelEkle() {
-        const ad = document.getElementById("pAd").value.trim();
-        const maas = parseFloat(document.getElementById("pMaas").value);
-        const tip = document.getElementById("pMaasTip").value;
-        if(!ad || isNaN(maas) || !tip) return alert("Eksik bilgi!");
-        
+    const ad = document.getElementById("pAd").value.trim();
+    const maas = parseFloat(document.getElementById("pMaas").value);
+    const tip = document.getElementById("pMaasTip").value;
+    
+    if(!ad || isNaN(maas) || !tip) return alert("Eksik bilgi! Lütfen tüm alanları doldurun.");
+
+    // --- AYNI İSİM KONTROLÜ BAŞLANGICI ---
+    db.ref('personeller/' + currentUser).once('value', snap => {
+        const mevcutVeriler = snap.val();
+        let isimVarMi = false;
+
+        if (mevcutVeriler) {
+            // Tüm kayıtları dön ve ismi kontrol et (Küçük/Büyük harf duyarsız)
+            Object.values(mevcutVeriler).forEach(p => {
+                if (p.ad.toLowerCase() === ad.toLowerCase()) {
+                    isimVarMi = true;
+                }
+            });
+        }
+
+        if (isimVarMi) {
+            alert("Hata: '" + ad + "' isminde bir personel zaten kayıtlı!");
+            return; // Fonksiyondan çık, kaydetme.
+        }
+        // --- AYNI İSİM KONTROLÜ BİTİŞİ ---
+
+        // İsim yoksa kayda devam et
         db.ref('personeller/' + currentUser).push({
             ad, maas, pMaasTip: tip,
             pMesaiUcret: parseFloat(document.getElementById("pMesaiUcret").value) || 0,
             pDevGunluk: parseFloat(document.getElementById("pDevGunluk").value) || 0,
             mesaiVal: 0, avansVal: 0, devVal: 0, mesaiSaat: 0, devGun: 0, net: maas
         }).then(() => {
-            alert("Eklendi.");
+            alert("Personel başarıyla kaydedildi.");
             ["pAd","pMaas","pMesaiUcret","pDevGunluk"].forEach(id => document.getElementById(id).value = "");
             document.getElementById("pMaasTip").value = "";
         });
-    }
-
+    });
+}
     function loadData() {
         db.ref('personeller/' + currentUser).on('value', snap => {
             const data = snap.val();
@@ -173,63 +242,153 @@
             if(data) Object.keys(data).forEach(id => {
                 const p = data[id];
                 select.innerHTML += `<option value="${id}">${p.ad}</option>`;
-                liste.innerHTML += `<tr><td><b>${p.ad}</b></td><td>${p.pMaasTip}</td><td style="color:var(--success); font-weight:bold;">${p.net.toFixed(2)} ₺</td>
-                <td><button class="btn-mini-detail" onclick="detay('${id}')">Detay</button>
-                <button class="btn-mini-danger" onclick="sil('${id}')">Sil</button></td></tr>`;
+                liste.innerHTML += `<tr><td><b>${p.ad}</b></td><td>${p.pMaasTip}</td><td style="color:var(--success); font-weight:bold;">${p.net.toFixed(2)} ₺</td><td><button class="btn-mini-detail" onclick="detay('${id}')">Detay</button><button class="btn-mini-danger" onclick="sil('${id}')">Sil</button></td></tr>`;
             });
         });
     }
 
     function islemYap() {
-        const id = document.getElementById("pSelect").value;
-        const miktar = parseFloat(document.getElementById("islemMiktar").value);
-        if(!id || isNaN(miktar)) return;
+    const id = document.getElementById("pSelect").value;
+    const miktar = parseFloat(document.getElementById("islemMiktar").value);
+    const tip = document.getElementById("islemTip").value;
+    if(!id || isNaN(miktar)) return alert("Lütfen personel ve miktar seçiniz!");
+    
+    db.ref('personeller/' + currentUser + '/' + id).once('value', snap => {
+        let p = snap.val();
+        const tarih = new Date().toLocaleString('tr-TR'); // İşlem tarihi
         
-        db.ref('personeller/' + currentUser + '/' + id).once('value', snap => {
-            let p = snap.val();
-            const tip = document.getElementById("islemTip").value;
-            if(tip === "mesai") { p.mesaiSaat = (p.mesaiSaat || 0) + miktar; p.mesaiVal = (p.mesaiVal || 0) + (miktar * (p.pMesaiUcret || 0)); }
-            else if(tip === "avans") { p.avansVal = (p.avansVal || 0) + miktar; }
-            else if(tip === "dev") { p.devGun = (p.devGun || 0) + miktar; p.devVal = (p.devVal || 0) + (miktar * (p.pDevGunluk || 0)); }
-            
-            p.net = p.maas + (p.mesaiVal || 0) - ((p.avansVal || 0) + (p.devVal || 0));
-            db.ref('personeller/' + currentUser + '/' + id).set(p).then(() => { document.getElementById("islemMiktar").value = ""; });
-        });
-    }
+        // Geçmiş listesi yoksa oluştur
+        if(!p.gecmis) p.gecmis = [];
 
+        let islemAciklama = "";
+        if(tip === "mesai") { 
+            p.mesaiSaat = (p.mesaiSaat || 0) + miktar; 
+            const tutar = miktar * (p.pMesaiUcret || 0);
+            p.mesaiVal = (p.mesaiVal || 0) + tutar; 
+            islemAciklama = `+${miktar} Saat Mesai (${tutar.toFixed(2)} ₺)`;
+        }
+        else if(tip === "avans") { 
+            p.avansVal = (p.avansVal || 0) + miktar; 
+            islemAciklama = `-${miktar.toFixed(2)} ₺ Avans Ödemesi`;
+        }
+        else if(tip === "dev") { 
+            p.devGun = (p.devGun || 0) + miktar; 
+            const tutar = miktar * (p.pDevGunluk || 0);
+            p.devVal = (p.devVal || 0) + tutar; 
+            islemAciklama = `-${miktar} Gün Kesinti (${tutar.toFixed(2)} ₺)`;
+        }
+        
+        // İşlemi geçmişe ekle
+        p.gecmis.push({ tarih, aciklama: islemAciklama, tip });
+        
+        p.net = p.maas + (p.mesaiVal || 0) - ((p.avansVal || 0) + (p.devVal || 0));
+        
+        db.ref('personeller/' + currentUser + '/' + id).set(p).then(() => { 
+            document.getElementById("islemMiktar").value = "";
+            alert("İşlem kaydedildi ve geçmişe eklendi.");
+        });
+    });
+}
     function detay(id) {
-        db.ref('personeller/' + currentUser + '/' + id).once('value', snap => {
-            const p = snap.val();
-            document.getElementById("detayBaslik").innerText = p.ad + " Bordro";
-            document.getElementById("detayIcerik").innerHTML = `
-                <div class="detay-satir"><span>Çalışma Şekli:</span> <span>${p.pMaasTip}</span></div>
-                <div class="detay-satir"><span>Sabit Maaş:</span> <span>${p.maas.toFixed(2)} ₺</span></div>
-                <div class="detay-satir" style="color:green"><span>Mesai (${p.mesaiSaat || 0} Saat):</span> <span>+${(p.mesaiVal || 0).toFixed(2)} ₺</span></div>
-                <div class="detay-satir" style="color:red"><span>Avanslar:</span> <span>-${(p.avansVal || 0).toFixed(2)} ₺</span></div>
-                <div class="detay-satir" style="color:red"><span>Kesinti (${p.devGun || 0} Gün):</span> <span>-${(p.devVal || 0).toFixed(2)} ₺</span></div>
-                <div class="detay-satir toplam"><span>NET ÖDENEN:</span> <span>${p.net.toFixed(2)} ₺</span></div>
-            `;
-            document.getElementById("detailModal").style.display = "block";
-        });
-    }
-
-    // --- E-TABLO (CSV) OLARAK İNDİRME ---
-    function exportToSheet() {
-        db.ref('personeller/' + currentUser).once('value', snap => {
-            const data = snap.val(); if(!data) return alert("Veri yok!");
-            // UTF-8 BOM ekleyerek Türkçe karakterleri garantiye alıyoruz
-            let content = "\ufeffAd Soyad;Calisma Sekli;Sabit Maas;Mesai Saat;Mesai TL;Avans;Kesinti Gun;Kesinti TL;Net Maas\n";
-            Object.values(data).forEach(p => {
-                content += `${p.ad};${p.pMaasTip};${p.maas};${p.mesaiSaat || 0};${p.mesaiVal || 0};${p.avansVal || 0};${p.devGun || 0};${p.devVal || 0};${p.net}\n`;
+    db.ref('personeller/' + currentUser + '/' + id).once('value', snap => {
+        const p = snap.val();
+        document.getElementById("detayBaslik").innerText = p.ad + " - Personel Kartı";
+        
+        // İşlem Geçmişi Tablosunu Oluştur
+        let gecmisHtml = `<div style="margin-top:20px;"><strong>📜 İşlem Geçmişi:</strong></div>
+                         <div style="font-size:12px; margin-top:10px; max-height:150px; overflow-y:auto; background:#f9f9f9; padding:10px; border-radius:8px;">`;
+        
+        if(p.gecmis && p.gecmis.length > 0) {
+            p.gecmis.reverse().forEach(g => { // Son işlemleri en üstte göster
+                const renk = g.tip === 'mesai' ? 'green' : 'red';
+                gecmisHtml += `<div style="border-bottom:1px solid #eee; padding:5px 0;">
+                                <small style="color:#888">${g.tarih}</small><br>
+                                <b style="color:${renk}">${g.aciklama}</b>
+                               </div>`;
             });
-            const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `Personel_Tablosu_${new Date().toLocaleDateString()}.csv`;
-            link.click();
-        });
-    }
+        } else {
+            gecmisHtml += `<div style="color:#aaa; text-align:center;">Henüz bir işlem kaydı yok.</div>`;
+        }
+        gecmisHtml += `</div>`;
 
+        document.getElementById("detayIcerik").innerHTML = `
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px; background:var(--bg); padding:10px; border-radius:8px;">
+                <span><strong>Maaş Tipi:</strong> ${p.pMaasTip}</span>
+                <span><strong>Birim Mesai:</strong> ${p.pMesaiUcret}₺/Saat</span>
+            </div>
+            <div class="detay-satir"><span>Sabit Maaş:</span> <span>${p.maas.toFixed(2)} ₺</span></div>
+            <div class="detay-satir" style="color:green"><span>Toplam Mesai (${p.mesaiSaat || 0} Saat):</span> <span>+${(p.mesaiVal || 0).toFixed(2)} ₺</span></div>
+            <div class="detay-satir" style="color:red"><span>Toplam Avanslar:</span> <span>-${(p.avansVal || 0).toFixed(2)} ₺</span></div>
+            <div class="detay-satir" style="color:red"><span>Toplam Kesinti (${p.devGun || 0} Gün):</span> <span>-${(p.devVal || 0).toFixed(2)} ₺</span></div>
+            <div class="detay-satir toplam"><span>NET ÖDENECEK:</span> <span style="color:var(--success)">${p.net.toFixed(2)} ₺</span></div>
+            ${gecmisHtml}
+        `;
+        document.getElementById("detailModal").style.display = "block";
+    });
+}
+
+   function exportToSheet() {
+    db.ref('personeller/' + currentUser).once('value', snap => {
+        const data = snap.val(); 
+        if(!data) return alert("Dışa aktarılacak veri bulunamadı!");
+
+        // 1. HTML ve CSS (Görünümü tabloyla sınırlar)
+        let tableHtml = `
+            <meta charset="utf-8">
+            <style>
+                table { border-collapse: collapse; width: auto; }
+                th { background-color: #2c3e50; color: white; padding: 10px; border: 1px solid #000; }
+                td { padding: 8px; border: 1px solid #ccc; text-align: left; }
+                .net-cell { font-weight: bold; color: green; }
+            </style>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ad Soyad</th>
+                        <th>Çalışma Şekli</th>
+                        <th>Sabit Maaş (₺)</th>
+                        <th>Mesai (Saat)</th>
+                        <th>Mesai Tutarı (₺)</th>
+                        <th>Avans (₺)</th>
+                        <th>Kesinti (Gün)</th>
+                        <th>Kesinti Tutarı (₺)</th>
+                        <th>Net Ödenecek (₺)</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        // 2. Verileri Satır Satır Ekleme
+        Object.values(data).forEach(p => {
+            tableHtml += `
+                <tr>
+                    <td>${p.ad || '-'}</td>
+                    <td>${p.pMaasTip || '-'}</td>
+                    <td>${(p.maas || 0).toFixed(2)}</td>
+                    <td>${p.mesaiSaat || 0}</td>
+                    <td>${(p.mesaiVal || 0).toFixed(2)}</td>
+                    <td>${(p.avansVal || 0).toFixed(2)}</td>
+                    <td>${p.devGun || 0}</td>
+                    <td>${(p.devVal || 0).toFixed(2)}</td>
+                    <td class="net-cell">${(p.net || 0).toFixed(2)}</td>
+                </tr>
+            `;
+        });
+
+        tableHtml += `</tbody></table>`;
+
+        // 3. Dosyayı Excel Formatında İndirme
+        const blob = new Blob([tableHtml], { type: 'application/vnd.ms-excel' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        const tarih = new Date().toLocaleDateString().replace(/\./g, '-');
+        
+        link.href = url;
+        link.download = `Personel_Bordro_Tablosu_${tarih}.xls`;
+        link.click();
+        URL.revokeObjectURL(url);
+    });
+}
     function fullDatabaseBackup() {
         db.ref('/').once('value', s => {
             const a = document.createElement("a");
@@ -246,15 +405,22 @@
             try {
                 const data = JSON.parse(e.target.result);
                 if(confirm("Tüm veriler silinsin mi?")) { db.ref('/').set(data).then(() => location.reload()); }
-            } catch(err) { alert("Hatalı dosya!"); }
+            } catch(err) { alert("Dosya hatası!"); }
         };
         reader.readAsText(file);
     }
 
     function toggleMenu(id) { const m = document.getElementById(id); m.style.display = m.style.display === "block" ? "none" : "block"; }
-    function closeModal() { document.getElementById("detailModal").style.display = "none"; }
+    function closeModal(id) { document.getElementById(id).style.display = "none"; }
     function logout() { sessionStorage.clear(); location.reload(); }
     function sil(id) { if(confirm("Silinsin mi?")) db.ref('personeller/' + currentUser + '/' + id).remove(); }
+    
+    window.onclick = function(event) {
+        if (!event.target.matches('.menu-btn')) {
+            const drops = document.getElementsByClassName("dropdown-content");
+            for (let i = 0; i < drops.length; i++) { if (drops[i].style.display === "block") drops[i].style.display = "none"; }
+        }
+    }
 </script>
 </body>
 </html>
